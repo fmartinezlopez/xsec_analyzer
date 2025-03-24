@@ -29,17 +29,17 @@ void ProtonMultiplicityBinScheme::DefineBlocks() {
 
     { 0.250, { 1, 2, 3, 6} },
     { 0.325, { 1, 2, 3, 4, 6} },
-    { 0.4,   { 1, 2, 3, 4, 6} },
-    { 0.45,  { 1, 2, 3, 4, 6} },
-    { 0.5,   { 1, 2, 3, 4, 6} },
+    { 0.400, { 1, 2, 3, 4, 6} },
+    { 0.450, { 1, 2, 3, 4, 6} },
+    { 0.500, { 1, 2, 3, 4, 6} },
     { 0.550, { 1, 2, 3, 4, 6} },
-    { 0.6,   { 1, 2, 3, 4, 6} },
-    { 0.65,  { 1, 2, 3, 4, 6} },
-    { 0.7,   { 1, 2, 3, 4, 6} },
-    { 0.75,  { 1, 2, 3, 4, 6} },
-    { 0.8,   { 1, 2, 3, 6} },
-    { 0.85,  { 1, 2, 3, 6} },
-    { 0.9,   { 1, 2, 3, 6} },
+    { 0.600, { 1, 2, 3, 4, 6} },
+    { 0.650, { 1, 2, 3, 4, 6} },
+    { 0.700, { 1, 2, 3, 4, 6} },
+    { 0.750, { 1, 2, 3, 4, 6} },
+    { 0.800, { 1, 2, 3, 6} },
+    { 0.850, { 1, 2, 3, 6} },
+    { 0.900, { 1, 2, 3, 6} },
   
   }; //above is the bins for the analysis up to the July 2022 uBooNE CM
 
@@ -47,13 +47,21 @@ void ProtonMultiplicityBinScheme::DefineBlocks() {
   std::string reco_branchexpr = "p3_lead_p.Mag(); GeV/c; Sum$(p3_p_vec.Mag() > 0.25); ";
   std::string title = "p_{p}; [GeV/c]; p_{mult}; ";
   std::string textitle = "p_{p}; [GeV/c]; p_{mult}; ";
-  std::string signal = "mc_is_signal"
+  std::string signal = "mc_is_signal";
   std::string selection = "sel_CCNp0pi";
 
   Block2D* b1t = new Block2D(true_branchexpr, title, textitle, PROTON_2D_BIN_EDGES, signal, kSignalTrueBin);
   Block2D* b1r = new Block2D(reco_branchexpr, title, textitle, PROTON_2D_BIN_EDGES, selection, kOrdinaryRecoBin);
 
   vect_block.emplace_back( b1t, b1r );
+
+  /* ------------------------------- Side bands ------------------------------- */
+
+  std::vector< double > PROTON_1D_BIN_EDGES = { 0.250, 0.325, 0.400, 0.450, 0.500, 0.550, 0.600, 0.650, 0.700, 0.750, 0.800, 0.850, 0.900 };
+
+  std::string side_branchexpr = "p3_lead_p.Mag(); GeV/c";
+  std::string side_title = "p_{p}; [GeV/c]";
+  std::string side_textitle = "p_{p}; [GeV/c]";
 
   // Dirt sideband
   const std::string DIRT_SIDEBAND_SELECTION =
@@ -64,6 +72,10 @@ void ProtonMultiplicityBinScheme::DefineBlocks() {
     " && sel_has_p_candidate && sel_passed_proton_pid_cut"
     " && sel_protons_contained && sel_lead_p_passed_mom_cuts";
 
+  Block1D* b2s = new Block1D(side_branchexpr, side_title, side_textitle, PROTON_1D_BIN_EDGES, DIRT_SIDEBAND_SELECTION, kSidebandRecoBin);
+
+  vect_sideband.emplace_back( b2s );
+
   // NC sideband
   const std::string NC_SIDEBAND_SELECTION =
     "sel_reco_vertex_in_FV && sel_pfp_starts_in_PCV"
@@ -71,6 +83,10 @@ void ProtonMultiplicityBinScheme::DefineBlocks() {
     " && sel_no_reco_showers && sel_has_p_candidate"
     " && sel_passed_proton_pid_cut && sel_protons_contained"
     " && sel_lead_p_passed_mom_cuts";
+
+  Block1D* b3s = new Block1D(side_branchexpr, side_title, side_textitle, PROTON_1D_BIN_EDGES, NC_SIDEBAND_SELECTION, kSidebandRecoBin);
+
+  vect_sideband.emplace_back( b3s );
 
   // CCNpi sideband
   const std::string CCNPI_SIDEBAND_SELECTION =
@@ -81,5 +97,15 @@ void ProtonMultiplicityBinScheme::DefineBlocks() {
     " && sel_has_p_candidate && sel_protons_contained"
     " && sel_lead_p_passed_mom_cuts"
     " && trk_llr_pid_score_v[ lead_p_candidate_idx ] > 0.2 ";
+
+  Block1D* b4s = new Block1D(side_branchexpr, side_title, side_textitle, PROTON_1D_BIN_EDGES, CCNPI_SIDEBAND_SELECTION, kSidebandRecoBin);
+
+  vect_sideband.emplace_back( b4s );
+
+  /* -------------------------- Background categories ------------------------- */
+
+  // Add relevant background categories
+  CATEGORY = "category";
+  background_index = {5, 6, 7, 8, 9, 10, 11};
 
 }
