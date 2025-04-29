@@ -51,7 +51,8 @@ SHARED_OBJECTS := $(SHARED_SOURCES:.cxx=.o)
 .INTERMEDIATE: $(ROOT_DICTIONARY)
 
 all: $(SHARED_LIB) bin/ProcessNTuples bin/univmake bin/SlicePlots \
-  bin/Unfolder bin/BinScheme bin/StandaloneUnfold
+    bin/Unfolder bin/BinScheme bin/StandaloneUnfold bin/xsroot bin/xsnotebook \
+    bin/AddFakeWeights bin/AddBeamlineGeometryWeights bin/UnfolderNuMI
 
 debug: all
 
@@ -64,7 +65,7 @@ $(SHARED_OBJECTS): %.o : %.cxx
 	$(CXX) $(CXXFLAGS) -fPIC -o $@ -c $<
 
 $(SHARED_LIB): $(ROOT_DICTIONARY) $(SHARED_OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $@ -fPIC -shared $^
+	$(CXX) $(CXXFLAGS) $(shell root-config --libs) -o $@ -fPIC -shared $^
 
 bin/ProcessNTuples: src/app/ProcessNTuples.C $(SHARED_LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $<
@@ -78,11 +79,26 @@ bin/SlicePlots: src/app/Slice_Plots.C $(SHARED_LIB)
 bin/Unfolder: src/app/Unfolder.C $(SHARED_LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $<
 
+bin/UnfolderNuMI: src/app/UnfolderNuMI.C $(SHARED_LIB)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -O3 -o $@ $<
+
 bin/BinScheme: src/app/binscheme.C $(SHARED_LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $<
 
 bin/StandaloneUnfold: src/app/standalone_unfold.C $(SHARED_LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $<
+
+bin/xsroot: $(SHARED_LIB)
+	cp src/app/xsroot $(BIN_DIR)
+
+bin/xsnotebook: $(SHARED_LIB)
+	cp src/app/xsnotebook $(BIN_DIR)
+
+bin/AddFakeWeights: src/app/NuMI/addFakeWeights.cpp $(SHARED_LIB)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -O3 -o $@ $<
+
+bin/AddBeamlineGeometryWeights: src/app/NuMI/addBeamlineGeometryWeightsToMap.cpp $(SHARED_LIB)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -O3 -o $@ $<
 
 clean:
 	$(RM) $(SHARED_LIB) $(BIN_DIR)/*
