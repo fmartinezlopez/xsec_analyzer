@@ -14,6 +14,7 @@
 #include "XSecAnalyzer/PlotUtils.hh"
 #include "XSecAnalyzer/SliceBinning.hh"
 #include "XSecAnalyzer/SliceHistogram.hh"
+//#include "XSecAnalyzer/Selections/EventCategoriesXp.hh"
 
 using NFT = NtupleFileType;
 
@@ -156,6 +157,7 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
 
     const auto& sel_for_cat = syst.get_selection_for_categories();
     const auto& cat_map = sel_for_cat.category_map();
+    //const auto&cat_map = CC1muXp_MAP;
 
     // Go in reverse so that, if the signal is defined first in the map, it
     // ends up on top. Note that this index is one-based to match the ROOT

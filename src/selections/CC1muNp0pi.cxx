@@ -7,6 +7,8 @@
 
 CC1muNp0pi::CC1muNp0pi() : SelectionBase( "CC1muNp0pi" ) {
   calc_type = kOpt1;
+  this->define_category_map();
+  this->define_constants();
 }
 
 void CC1muNp0pi::define_constants() {

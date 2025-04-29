@@ -11,7 +11,6 @@
 #include "TH1D.h"
 #include "THStack.h"
 #include "TLegend.h"
-#include "TLegendEntry.h"
 #include "TLine.h"
 #include "TParameter.h"
 #include "TStyle.h"

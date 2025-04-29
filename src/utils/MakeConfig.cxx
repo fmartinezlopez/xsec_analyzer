@@ -313,7 +313,10 @@ void MakeConfig::Print(){
   //	int sideband_bin_index = 0;
   for(int i = 0; i < vect_sideband->size(); i++){
     if(vect_sideband->at(i).block_reco_->Is1D()){
-      auto& bin_sideband_slice = add_slice( sb, vect_sideband->at(i).block_reco_->GetVector(), bin_number_var_idx++ );
+      int var_idx = find_slice_var_index(
+        vect_sideband->at(i).block_reco_->GetXTitle(), sb.slice_vars_ );
+
+      auto& bin_sideband_slice = add_slice( sb, vect_sideband->at(i).block_reco_->GetVector(), var_idx );
       int sideband_bin_index = 0;
       for(int j = 0; j < vect_sideband->at(i).block_reco_->GetNBinsX(); j++){
         bin_sideband_slice.bin_map_[ ++sideband_bin_index ].insert( reco_bins.size() );

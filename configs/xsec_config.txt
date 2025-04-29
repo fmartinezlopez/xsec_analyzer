@@ -1,6 +1,7 @@
-UnivFile /exp/uboone/data/users/barrow/CC2P/Universes.root
-SystFile ./Configs/systcalc.conf
-#FPFile ./Configs/file_properties.txt
+#UnivFile /exp/uboone/data/users/barrow/CC2P/Universes.root
+UnivFile /exp/uboone/data/users/fmlopez/proton_multiplicity_univ.root
+SystFile ./configs/systcalc.conf
+#FPFile ./configs/file_properties.txt
 #Unfold DAgostini fm 0.025
 Unfold WienerSVD 1 second-deriv
 Prediction uBTune "MicroBooNE Tune" univ CV
