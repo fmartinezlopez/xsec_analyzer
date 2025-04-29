@@ -1,4 +1,6 @@
 *.root
+*.pdf
+*.png
 
 UniverseMaker/univmake
 NTupleProcessing/ProcessNTuples

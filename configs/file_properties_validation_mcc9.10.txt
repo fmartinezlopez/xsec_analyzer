@@ -1,0 +1,24 @@
+# Trigger counts and POT exposures are taken from the searching4nues
+# spreadsheet: tinyurl.com/pelee-nue-ntuples
+# file_name run file_type [triggers POT (for data only)]
+#
+# Beam-off data
+#/exp/uboone/data/users/fmlopez/mcc9.10_validation/reprocessed_samples/xsec-ana-MCC9.10_Test_Samples_v10_04_07_03_Run4b_pandora_standalone_reco2_BNB_beam_off_reco2_ana.root 4 extBNB 10097992 0
+#
+# Beam-off data (good runs)
+/exp/uboone/data/users/fmlopez/mcc9.10_validation/reprocessed_samples/xsec-ana-MCC9.10_Test_Samples_v10_04_07_03_Run4b_pandora_standalone_reco2_BNB_beam_off_reco2_ana_goodruns.root 4 extBNB 27868945 0
+#
+# Beam-on data
+#/exp/uboone/data/users/fmlopez/mcc9.10_validation/reprocessed_samples/xsec-ana-MCC9.10_Test_Samples_v10_04_07_03_Run4b_pandora_standalone_reco2_BNB_beam_on_reco2_ana.root 4 onBNB 10104180 3.92e19
+#
+# Beam-on data (good runs)
+/exp/uboone/data/users/fmlopez/mcc9.10_validation/reprocessed_samples/xsec-ana-MCC9.10_Test_Samples_v10_04_07_03_Run4b_pandora_standalone_reco2_BNB_beam_on_reco2_ana_goodruns.root 4 onBNB 9515547 3.92e19
+#
+# Dirt MC samples
+/exp/uboone/data/users/fmlopez/mcc9.10_validation/reprocessed_samples/xsec-ana-MCC9.10_Test_Samples_v10_04_07_04_Run4b_pandora_standalone_reco2_BNB_dirt_reco2_ana.root 4 dirtMC
+#
+# Intrinsic nue MC samples
+/exp/uboone/data/users/fmlopez/mcc9.10_validation/reprocessed_samples/xsec-ana-MCC9.10_Test_Samples_v10_04_07_04_Run4b_pandora_standalone_reco2_BNB_nue_overlay_reco2_ana.root 4 nueMC
+#
+# numu MC samples
+/exp/uboone/data/users/fmlopez/mcc9.10_validation/reprocessed_samples/xsec-ana-MCC9.10_Test_Samples_v10_04_07_04_Run4b_pandora_standalone_reco2_BNB_nu_overlay_reco2_ana.root 4 numuMC

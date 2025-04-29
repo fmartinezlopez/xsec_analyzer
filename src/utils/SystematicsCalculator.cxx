@@ -1164,7 +1164,9 @@ std::unique_ptr< CovMatrixMap > SystematicsCalculator::get_covariances() const
 
           // Note the one-based reco bin index used by ROOT histograms
           temp_cov_mat.cov_matrix_->SetBinContent( rb1 + 1, rb2 + 1, mc_cov );
+          std::cout << mc_cov << ", ";
         }
+        std::cout << "" << std::endl;
       }
 
     } // MCstat type

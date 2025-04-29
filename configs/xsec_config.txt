@@ -1,11 +1,11 @@
 #UnivFile /exp/uboone/data/users/barrow/CC2P/Universes.root
-UnivFile /exp/uboone/data/users/fmlopez/proton_multiplicity_univ.root
+UnivFile /exp/uboone/data/users/fmlopez/proton_multiplicity_univ_no_sidebands.root
 SystFile ./configs/systcalc.conf
-#FPFile ./configs/file_properties.txt
-#Unfold DAgostini fm 0.025
-Unfold WienerSVD 1 second-deriv
-Prediction uBTune "MicroBooNE Tune" univ CV
-#Prediction FakeData "Fake data" univ FakeData
+FPFile ./configs/file_properties.txt
+Unfold DAgostini fm 0.025
+#Unfold WienerSVD 1 second-deriv
+#Prediction uBTune "MicroBooNE Tune" univ CV
+Prediction FakeData "Fake data" univ FakeData
 #Prediction gv2 "GENIE 2.12.10" file /exp/uboone/app/users/gardiner/temp-gen/BuildEventGenerators/ubmc/comp-all/comp-gv2.root MicroBooNE_CC1MuNp_XSec_2D_PpCosp_nu_MC
 #Prediction gv3 "GENIE 3.0.6" file /exp/uboone/app/users/gardiner/temp-gen/BuildEventGenerators/ubmc/comp-all/comp-gv3.root MicroBooNE_CC1MuNp_XSec_2D_PpCosp_nu_MC
 #Prediction g1802a "GENIE 3.2.0 G18_02a" file /exp/uboone/app/users/gardiner/temp-gen/BuildEventGenerators/ubmc/comp-all/comp-gv3-g1802a.root MicroBooNE_CC1MuNp_XSec_2D_PpCosp_nu_MC

@@ -406,6 +406,8 @@ void make_plots( const std::string& branchexpr, const std::string& selection,
   line->Draw();
 
   c1->Update();
+  std::string outname = selection + "_" + branchexpr + ".pdf";
+  c1->SaveAs(outname.c_str());
 }
 
 // Overloaded version with constant-width binning
@@ -428,6 +430,8 @@ void make_plots( const std::string& branchexpr, const std::string& selection,
 
 void plots() {
 
+  std::cout << "Doing something..." << std::endl;
+
   const std::string sel_CCNp = "sel_CCNp0pi";
   const std::string sel_CCincl = "sel_nu_mu_cc && sel_has_muon_candidate"
     " && sel_muon_above_threshold";
@@ -440,7 +444,7 @@ void plots() {
   //const std::string sel_CCNpi = "sel_nu_mu_cc && sel_no_reco_showers && sel_has_muon_candidate && sel_has_p_candidate && !sel_passed_proton_pid_cut && sel_protons_contained"; // && sel_lead_p_passed_mom_cuts";
 
   make_plots( "topological_score",
-    "CC1muNp0pi_reco_vertex_in_FV && CC1muNp0pi_pfp_starts_in_PCV",
+    "reco_vertex_in_FV && pfp_starts_in_PCV",
     std::set<int>{4}, 0., 1., 40, "topological score", "events", "Run 4b" );
 
   //make_plots( "reco_nu_vtx_sce_z", sel_CCNpi, std::set<int>{1}, FV_Z_MIN,

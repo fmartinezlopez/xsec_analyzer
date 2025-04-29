@@ -61,7 +61,7 @@ void ProtonMultiplicityBinScheme::DefineBlocks() {
 
   /* ------------------------------- Side bands ------------------------------- */
 
-  std::vector< double > PROTON_1D_BIN_EDGES = { 0.250, 0.325, 0.400, 0.450, 0.500, 0.550, 0.600, 0.650, 0.700, 0.750, 0.800, 0.850, 0.900 };
+  /* std::vector< double > PROTON_1D_BIN_EDGES = { 0.250, 0.325, 0.400, 0.450, 0.500, 0.550, 0.600, 0.650, 0.700, 0.750, 0.800, 0.850, 0.900 };
 
   std::string side_branchexpr = "reco_p3_lead_p.Mag();GeV/c";
   std::string side_title = "p_{p};GeV/c";
@@ -104,7 +104,7 @@ void ProtonMultiplicityBinScheme::DefineBlocks() {
 
   Block1D* b4s = new Block1D(side_branchexpr, side_title, side_textitle, PROTON_1D_BIN_EDGES, CCNPI_SIDEBAND_SELECTION, kSidebandRecoBin);
 
-  vect_sideband.emplace_back( b4s );
+  vect_sideband.emplace_back( b4s ); */
 
   /* -------------------------- Background categories ------------------------- */
 

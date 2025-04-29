@@ -22,6 +22,30 @@
 #include "SystematicsCalculator.hh"
 #include "WienerSVDUnfolder.hh"
 
+#include <iostream>
+#include <string_view>
+
+template <typename T>
+constexpr auto type_name() {
+  std::string_view name, prefix, suffix;
+#ifdef __clang__
+  name = __PRETTY_FUNCTION__;
+  prefix = "auto type_name() [T = ";
+  suffix = "]";
+#elif defined(__GNUC__)
+  name = __PRETTY_FUNCTION__;
+  prefix = "constexpr auto type_name() [with T = ";
+  suffix = "]";
+#elif defined(_MSC_VER)
+  name = __FUNCSIG__;
+  prefix = "auto __cdecl type_name<";
+  suffix = ">(void)";
+#endif
+  name.remove_prefix(prefix.size());
+  name.remove_suffix(suffix.size());
+  return name;
+}
+
 using WSVD_RMT = WienerSVDUnfolder::RegularizationMatrixType;
 using MCC9SystMode = MCC9SystematicsCalculator::SystMode;
 
@@ -364,6 +388,7 @@ CrossSectionExtractor::CrossSectionExtractor(
 
 CrossSectionResult CrossSectionExtractor::get_unfolded_events() {
 
+  std::cout << "Calling get_covariances from CrossSectionExtractor::get_unfolded_events" << std::endl;
   // Evaluate the total and partial covariance matrices in reco space
   auto matrix_map = syst_->get_covariances();
 
@@ -434,12 +459,57 @@ CrossSectionResult CrossSectionExtractor::get_unfolded_events() {
   const TMatrixD& err_prop = *xsec.result_.err_prop_matrix_;
   TMatrixD err_prop_tr( TMatrixD::kTransposed, err_prop );
 
+  std::cout << "Error propagation matrix" << std::endl;
+  std::cout << "Type: " << type_name<decltype(err_prop)>() << std::endl;
+
+  Int_t nrows = err_prop.GetNrows();
+  Int_t ncols = err_prop.GetNcols();
+
+  for (Int_t i = 0; i < nrows; i++) {
+      for (Int_t j = 0; j < ncols; j++) {
+          Double_t element = err_prop(i, j);
+          std::cout << element << ", ";
+      }
+      std::cout << "" << std::endl;
+  }
+
   for ( const auto& matrix_pair : *matrix_map ) {
     const std::string& matrix_key = matrix_pair.first;
     auto temp_cov_mat = matrix_pair.second.get_matrix();
 
+    std::cout << "Matrix key: " << matrix_key << std::endl;
+    std::cout << "Type: " << type_name<decltype(temp_cov_mat)>() << std::endl;
+
+    if (matrix_key == "MCstats") {
+      nrows = temp_cov_mat->GetNrows();
+      ncols = temp_cov_mat->GetNcols();
+
+      for (Int_t i = 0; i < nrows; i++) {
+          for (Int_t j = 0; j < ncols; j++) {
+              Double_t element = (*temp_cov_mat)(i, j);
+              std::cout << element << ", ";
+          }
+          std::cout << "" << std::endl;
+      }
+    }
+
     TMatrixD temp_mat( *temp_cov_mat, TMatrixD::EMatrixCreatorsOp2::kMult,
       err_prop_tr );
+
+    if (matrix_key == "MCstats") {
+      std::cout << "First matrix multiplication" << std::endl;
+
+      nrows = temp_mat.GetNrows();
+      ncols = temp_mat.GetNcols();
+
+      for (Int_t i = 0; i < nrows; i++) {
+          for (Int_t j = 0; j < ncols; j++) {
+              Double_t element = temp_mat(i, j);
+              std::cout << element << ", ";
+          }
+          std::cout << "" << std::endl;
+      }
+    }
 
     xsec.unfolded_cov_matrix_map_[ matrix_key ] = std::make_unique< TMatrixD >(
       err_prop, TMatrixD::EMatrixCreatorsOp2::kMult, temp_mat );
