@@ -26,7 +26,7 @@ class SliceHistogram {
       const Slice& slice, const CovMatrix* input_cov_mat = nullptr );
 
     static SliceHistogram* make_slice_histogram( TMatrixD& reco_bin_counts,
-      const Slice& slice, const TMatrixD* input_cov_mat );
+      const Slice& slice, const TMatrixD* input_cov_mat = nullptr );
 
     // TODO: revisit this implementation
     static SliceHistogram* make_slice_efficiency_histogram(

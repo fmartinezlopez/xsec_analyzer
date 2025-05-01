@@ -168,16 +168,17 @@ void Unfolder(std::string XSEC_Config, std::string SLICE_Config, std::string Out
       //======================================================================================
       //Loop over all generator predictions and save them to the same output
 
-      //DB Still need to check this loop as I don't currently have generator prediction files for tutorial binning scheme
       for ( const auto& gen_pair : extr->get_prediction_map()) {
         std::string gen_short_name = gen_pair.second->name();
         TMatrixD temp_gen = gen_pair.second->get_prediction();
-        if (RT == "XsecUnits") {
-          temp_gen *= (1.0 / conv_factor);
-        }
 
-        TH1D* temp_gen_hist = Matrix_To_TH1(temp_gen,gen_short_name,SliceVariableName,"Events");
-        temp_gen_hist->Write(("GenPred_"+SliceVariableName+"_"+gen_short_name).c_str());
+        SliceHistogram* Slice_pred = SliceHistogram::make_slice_histogram( temp_gen, Slice );
+        TH1* SliceHist = Slice_pred->hist_.get();
+
+        if (RT == "XsecUnits") {
+          SliceHist->Scale(1.0 / conv_factor);
+        }
+        SliceHist->Write(("GenPred_"+SliceVariableName+"_"+gen_short_name).c_str());
 
         if (DumpToText) dump_text_column_vector( OutputDirectory+"/"+RT+"_vec_table_" + gen_short_name + TextExtension, temp_gen );
         if (DumpToPlot) draw_column_vector( OutputDirectory+"/"+RT+"_vec_table_" + gen_short_name + PlotExtension, temp_gen, (gen_short_name + " Prediction").c_str(), "Bin Number", "Cross Section [#times 10^{-38} cm^{2}]");
