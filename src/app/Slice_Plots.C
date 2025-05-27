@@ -72,6 +72,18 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
   std::string Plot_Suffix = ".pdf";
   std::string PlotFileName = Plot_OutputDir + "/" + Plot_Prefix + Form("_%i",FileNameCounter) + Plot_Suffix;
 
+  // Create additional output file for histograms
+  std::string OutputFileName = Plot_OutputDir + "/" + Plot_Prefix + ".root";
+
+  // Check that the output file can be written to
+  TFile* File = new TFile(OutputFileName.c_str(), "RECREATE");
+  if (!File || File->IsZombie()) {
+    std::cerr << "Could not write to output file:" << OutputFileName << std::endl;
+    throw;
+  }
+
+  File->cd();
+
   std::cout << "\nRunning Slice_Plots with options:" << std::endl;
   std::cout << "\tFPM_Config: " << FPM_Config << std::endl;
   std::cout << "\tSYST_Config: " << SYST_Config << std::endl;
@@ -141,18 +153,24 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
 
   for ( size_t sl_idx = 0u; sl_idx < sb.slices_.size(); ++sl_idx ) {
 
+    File->mkdir((Plot_Prefix + Form("_%i", sl_idx)).c_str());
+    File->cd((Plot_Prefix + Form("_%i", sl_idx)).c_str());
+
     const auto& slice = sb.slices_.at( sl_idx );
 
     // We now have all of the reco bin space histograms that we need as input.
     // Use them to make new histograms in slice space.
     SliceHistogram* slice_bnb = SliceHistogram::make_slice_histogram(
       *reco_bnb_hist, slice, &matrix_map.at("BNBstats") );
+    slice_bnb->hist_->Write("BNB");
 
     SliceHistogram* slice_ext = SliceHistogram::make_slice_histogram(
       *reco_ext_hist, slice, &matrix_map.at("EXTstats") );
+    slice_ext->hist_->Write("EXT");
 
     SliceHistogram* slice_mc_plus_ext = SliceHistogram::make_slice_histogram(
       *reco_mc_plus_ext_hist, slice, &matrix_map.at("PredTotal") );
+    slice_mc_plus_ext->hist_->Write("MC_plus_EXT");
 
     auto chi2_result = slice_bnb->get_chi2( *slice_mc_plus_ext );
     std::cout << "Slice " << sl_idx << ": \u03C7\u00b2 = "
@@ -170,6 +188,9 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
     const auto& cat_map = sel_for_cat.category_map();
     //const auto&cat_map = CC1muXp_MAP;
 
+    File->mkdir((Plot_Prefix + Form("_%i", sl_idx) +"/Categories").c_str());
+    File->cd((Plot_Prefix + Form("_%i", sl_idx) +"/Categories").c_str());
+
     // Go in reverse so that, if the signal is defined first in the map, it
     // ends up on top. Note that this index is one-based to match the ROOT
     // histograms
@@ -184,6 +205,7 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
 
       SliceHistogram* temp_slice_mc = SliceHistogram::make_slice_histogram(
         *temp_mc_hist, slice  );
+      temp_slice_mc->hist_->Write(iter->second.first.c_str());
 
       set_mc_histogram_style( cat, temp_slice_mc->hist_.get(), color );
 
@@ -217,6 +239,9 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
     PlotFileName = Plot_OutputDir + "/" + Plot_Prefix + Form("_%i",FileNameCounter) + Plot_Suffix;
     c1->SaveAs(PlotFileName.c_str());
     FileNameCounter += 1;
+
+    File->mkdir((Plot_Prefix + Form("_%i", sl_idx) +"/Uncertainties").c_str());
+    File->cd((Plot_Prefix + Form("_%i", sl_idx) +"/Uncertainties").c_str());
 
     // Get the binning and axis labels for the current slice by cloning the
     // (empty) histogram owned by the Slice object
@@ -262,6 +287,8 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
         slice_for_syst->hist_->SetBinContent( global_bin_idx, frac );
         slice_for_syst->hist_->SetBinError( global_bin_idx, 0. );
       }
+
+      slice_for_syst->hist_->Write(key.c_str());
 
       // Check whether the current covariance matrix name is present in
       // the vector defined above this loop. If it isn't, don't bother to
@@ -317,6 +344,8 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
     FileNameCounter += 1;
 
   } // slices
+
+  File->Close();
 
 }
 
