@@ -52,6 +52,7 @@ MakeConfig::~MakeConfig(){
     delete vect_block->at(i).block_true_;
     delete vect_block->at(i).block_reco_;
   }
+  OutputFile->Close();
 }
 
 void MakeConfig::ResPlots() {
@@ -537,6 +538,11 @@ void MakeConfig::make_res_plots( const std::string& branchexpr,
 
   expected_reco_hist->SetTitle( temp_ss.str().c_str() );
 
+  OutputFile->cd();
+  OutputFile->mkdir(("1D" + smear_hist_name + branchexpr).c_str());
+  OutputFile->cd(("1D" + smear_hist_name + branchexpr).c_str());
+  expected_reco_hist->Write();
+
   TCanvas* c_expected = new TCanvas;
   expected_reco_hist->Draw( "hist e" );
 
@@ -595,6 +601,8 @@ void MakeConfig::make_res_plots( const std::string& branchexpr,
   smear_hist->SetStats( false );
   smear_hist->SetMarkerSize( 1.8 ); // text size
   smear_hist->SetMarkerColor( kWhite ); // text color
+
+  smear_hist->Write();
 
   // Draw the smearing matrix plot
   TCanvas* c_smear = new TCanvas;
@@ -751,6 +759,11 @@ void MakeConfig::make_res_plots( std::istream& in_stream,
 
   expected_reco_hist->SetTitle( temp_ss.str().c_str() );
 
+  OutputFile->cd();
+  OutputFile->mkdir(("2D" + variable_save).c_str());
+  OutputFile->cd(("2D" + variable_save).c_str());
+  expected_reco_hist->Write();
+
   TCanvas* c_expected = new TCanvas;
   expected_reco_hist->Draw( "hist e" );
   c_expected->SaveAs(TString(c_expected->GetName()) + variable_save + "_hist.png");
@@ -810,6 +823,8 @@ void MakeConfig::make_res_plots( std::istream& in_stream,
   smear_hist->SetStats( false );
   smear_hist->SetMarkerSize( 1.8 ); // text size
   smear_hist->SetMarkerColor( kWhite ); // text color
+
+  smear_hist->Write();
 
   // Draw the smearing matrix plot
   TCanvas* c_smear = new TCanvas;
@@ -1402,4 +1417,14 @@ void MakeConfig::BinScheme() {
 
   vect_block = &bin_scheme_->vect_block;
   vect_sideband = &bin_scheme_->vect_sideband;
+
+  OutputFileName = BIN_CONFIG + SELECTION + ".root";
+  OutputFile = new TFile(OutputFileName.c_str(), "RECREATE");
+  if (!OutputFile || OutputFile->IsZombie()) {
+    std::cerr << "Could not write to output file:" << OutputFileName << std::endl;
+    throw;
+  }
+
+  OutputFile->cd();
+
 }

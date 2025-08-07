@@ -156,7 +156,7 @@ SystematicsCalculator::SystematicsCalculator(
 
 
 
-  if ( !total_subdir ) {
+  /* if ( !total_subdir ) {
 
     // We couldn't find the pre-computed POT-summed universe histograms,
     // so make them "on the fly" and store them in this object
@@ -175,7 +175,14 @@ SystematicsCalculator::SystematicsCalculator(
     // Retrieve the POT-summed universe histograms that were built
     // previously
     this->load_universes( *total_subdir );
-  }
+  } */
+
+  //! Trick for fake data
+  this->build_universes( *root_tdir );
+  total_subdir = new TDirectoryFile( total_subfolder_name.c_str(),
+    "universes", "", root_tdir );
+  this->save_universes( *total_subdir );
+
   // Also load the configuration of true and reco bins used to create the
   // universes
   std::string* true_bin_spec = nullptr;
@@ -388,6 +395,11 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
   std::map< int, double > run_to_bnb_trigs_map;
   std::map< int, double > run_to_ext_trigs_map;
 
+  //! Trick for fake data
+  //std::vector< double > EXPECTED_BNB_POT = {1.62e20, 2.62e20, 2.55e20};
+  //std::vector< double > EXPECTED_BNB_TRIGGERS = {36139233, 62045760, 61012955};
+  //int run_index = 0;
+
   const auto& fpm = FilePropertiesManager::Instance();
   const auto& data_norm_map = fpm.data_norm_map();
   for ( const auto& run_and_type_pair : fpm.ntuple_file_map() ) {
@@ -406,6 +418,10 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
       run_to_bnb_pot_map.at( run ) += pot_and_trigs.pot_;
       run_to_bnb_trigs_map.at( run ) += pot_and_trigs.trigger_count_;
 
+      //! Trick for fake data
+      //run_to_bnb_pot_map.at( run ) += EXPECTED_BNB_POT[run_index];
+      //run_to_bnb_trigs_map.at( run ) += EXPECTED_BNB_TRIGGERS[run_index];
+
     } // BNB data files
 
     const auto& ext_file_set = type_map.at( NFT::kExtBNB );
@@ -419,7 +435,8 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
       run_to_ext_trigs_map.at( run ) += pot_and_trigs.trigger_count_;
 
     } // EXT files
-
+    //! Trick for fake data
+    //run_index++;
   } // runs
 
   // Now that we have the accumulated POT over all BNB data runs, sum it
@@ -1146,6 +1163,8 @@ std::unique_ptr< CovMatrixMap > SystematicsCalculator::get_covariances() const
   std::string name, type;
   while ( config_file >> name >> type ) {
 
+    std::cout << "Unc name " << name << std::endl;
+
     CovMatrix temp_cov_mat = this->make_covariance_matrix( name );
 
     // If the current covariance matrix is defined as a sum of others, then
@@ -1178,9 +1197,7 @@ std::unique_ptr< CovMatrixMap > SystematicsCalculator::get_covariances() const
 
           // Note the one-based reco bin index used by ROOT histograms
           temp_cov_mat.cov_matrix_->SetBinContent( rb1 + 1, rb2 + 1, mc_cov );
-          std::cout << mc_cov << ", ";
         }
-        std::cout << "" << std::endl;
       }
 
     } // MCstat type
@@ -1290,6 +1307,7 @@ std::unique_ptr< CovMatrixMap > SystematicsCalculator::get_covariances() const
         if ( ntuple_type == NFT::kDetVarMCSCE
           || ntuple_type == NFT::kDetVarMCRecomb2 )
         {
+          std::cout << "Using other CV universe" << std::endl;
           detVar_cv_u = detvar_universes_.at( NFT::kDetVarMCCVExtra ).get();
         }
       }

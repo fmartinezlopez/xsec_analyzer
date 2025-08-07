@@ -6,9 +6,11 @@
 #include <limits>
 #include <memory>
 #include <sstream>
+#include <iostream>
 
 // ROOT includes
 #include "TDecompQRH.h"
+#include "TDecompLU.h"
 #include "TCanvas.h"
 #include "TH1D.h"
 #include "TH2D.h"

@@ -27,7 +27,7 @@ void set_event_branch_addresses(TTree& etree, AnalysisEvent& ev)
   //SetBranchAddress(etree, "CosmicIPAll3D", &ev.CosmicIPAll3D_ );
 
   // containment fraction
-  SetBranchAddress(etree, "contained_fraction", &ev.contained_fraction_ );
+  if (useNuMI) SetBranchAddress(etree, "contained_fraction", &ev.contained_fraction_ );
 
   // Reconstructed neutrino vertex position (with corrections for
   // space charge applied)
@@ -89,15 +89,17 @@ void set_event_branch_addresses(TTree& etree, AnalysisEvent& ev)
     ev.shower_start_distance_.reset( nullptr );
   }
 
-  // primary shower
-  SetBranchAddress(etree, "shr_id", &ev.shr_id_ );
-  SetBranchAddress(etree, "shr_score", &ev.shr_score_ );
-  SetBranchAddress(etree, "shr_energy_cali", &ev.shr_energy_cali_ );
-  SetBranchAddress(etree, "hits_ratio", &ev.hits_ratio_ );
-  SetBranchAddress(etree, "shrmoliereavg", &ev.shrmoliereavg_ );
-  SetBranchAddress(etree, "shr_distance", &ev.shr_distance_ );
-  SetBranchAddress(etree, "shr_tkfit_gap10_dedx_Y", &ev.shr_tkfit_gap10_dedx_Y_ );
-  SetBranchAddress(etree, "shr_tkfit_2cm_dedx_Y", &ev.shr_tkfit_2cm_dedx_Y_ );
+  // primary shower -- not in pelee
+  if (useNuMI) {
+    SetBranchAddress(etree, "shr_id", &ev.shr_id_ );
+    SetBranchAddress(etree, "shr_score", &ev.shr_score_ );
+    SetBranchAddress(etree, "shr_energy_cali", &ev.shr_energy_cali_ );
+    SetBranchAddress(etree, "hits_ratio", &ev.hits_ratio_ );
+    SetBranchAddress(etree, "shrmoliereavg", &ev.shrmoliereavg_ );
+    SetBranchAddress(etree, "shr_distance", &ev.shr_distance_ );
+    SetBranchAddress(etree, "shr_tkfit_gap10_dedx_Y", &ev.shr_tkfit_gap10_dedx_Y_ );
+    SetBranchAddress(etree, "shr_tkfit_2cm_dedx_Y", &ev.shr_tkfit_2cm_dedx_Y_ );
+  }
 
   // Track properties
   set_object_input_branch_address( etree, "trk_pfp_id_v", ev.track_pfp_id_ );
@@ -187,7 +189,7 @@ void set_event_branch_addresses(TTree& etree, AnalysisEvent& ev)
   if ( has_genie_mc_weights ) {
     SetBranchAddress(etree, "weightSpline", &ev.spline_weight_ );
     SetBranchAddress(etree, "weightTune", &ev.tuned_cv_weight_ );
-    SetBranchAddress(etree, "ppfx_cv", &ev.ppfx_cv_weight_ );
+    if (useNuMI) SetBranchAddress(etree, "ppfx_cv", &ev.ppfx_cv_weight_ );
   }
 
   bool has_weight_map = ( etree.GetBranch("weights") != nullptr );

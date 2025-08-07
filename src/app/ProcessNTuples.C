@@ -59,6 +59,8 @@ void analyze( const std::string& input_filename,
   out_file->cd();
   TTree* out_tree = new TTree( "stv_tree", "STV analysis tree" );
 
+  //out_file->SetBit(kCanDelete, false);
+
   // Get the total POT from the subruns TTree. Save it in the output
   // TFile as a TParameter<float>. Real data doesn't have this TTree,
   // so check that it exists first.
@@ -104,7 +106,7 @@ void analyze( const std::string& input_filename,
 
   while ( true ) {
 
-    //if ( events_entry > 1000) break;
+    //if ( events_entry > 100) break;
 
     if ( events_entry % 1000 == 0 ) {
       std::cout << "Processing event #" << events_entry << '\n';
@@ -183,15 +185,22 @@ void analyze( const std::string& input_filename,
   for ( auto& sel : selections ) {
     sel->summary();
   }
-  std::cout << "Wrote output to:" << output_filename << std::endl;
+  std::cout << "Wrote output to: " << output_filename << std::endl;
 
   for ( auto& sel : selections ) {
     sel->final_tasks();
   }
 
+  // Before closing the output file, properly clean up the TChains
+  events_ch.SetDirectory(nullptr);  // Disconnect from any directory
+  subruns_ch.SetDirectory(nullptr);
+  
+  // Reset the chains to release file handles
+  events_ch.Reset();
+  subruns_ch.Reset();
+
   out_tree->Write();
   out_file->Close();
-  delete out_file;
 }
 
 int main( int argc, char* argv[] ) {

@@ -289,6 +289,7 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
       }
 
       slice_for_syst->hist_->Write(key.c_str());
+      cov_matrix.cov_matrix_->Write((key+"_matrix").c_str());
 
       // Check whether the current covariance matrix name is present in
       // the vector defined above this loop. If it isn't, don't bother to

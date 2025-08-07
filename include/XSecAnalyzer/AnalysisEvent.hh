@@ -79,7 +79,7 @@ public:
   MyPointer< std::vector<float> > shower_startz_;
   MyPointer< std::vector<float> > shower_start_distance_;
 
-  // Primary shower
+  // Primary shower -- not in pelee
   int shr_id_ = BOGUS_INT;
   float shr_energy_cali_ = BOGUS;
   float shr_score_ = BOGUS;

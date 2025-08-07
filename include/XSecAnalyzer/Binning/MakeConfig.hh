@@ -32,6 +32,9 @@ class MakeConfig {
     std::string CATEGORY;
     std::vector<int>* background_index;
 
+    std::string OutputFileName;
+    TFile* OutputFile;
+
     // The anticipated POT to use when scaling the MC prediction in the
     // expected reco events plot. This will help ensure that all choices of
     // reco binning are informed by the expected statistical uncertainties when
