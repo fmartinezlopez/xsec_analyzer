@@ -402,6 +402,7 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
 
   const auto& fpm = FilePropertiesManager::Instance();
   const auto& data_norm_map = fpm.data_norm_map();
+  std::cout << "Fill maps..." << std::endl;
   for ( const auto& run_and_type_pair : fpm.ntuple_file_map() ) {
     int run = run_and_type_pair.first;
     const auto& type_map = run_and_type_pair.second;
@@ -438,6 +439,7 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
     //! Trick for fake data
     //run_index++;
   } // runs
+  std::cout << "Done!" << std::endl;
 
   // Now that we have the accumulated POT over all BNB data runs, sum it
   // into a single number. This will be used to normalize the detVar MC
@@ -450,6 +452,7 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
   // Loop through the ntuple files for the various run / ntuple file type
   // pairs considered in the analysis. We will react differently in a run-
   // and type-dependent way.
+  std::cout << "Loop over ntuples..." << std::endl;
   for ( const auto& run_and_type_pair : fpm.ntuple_file_map() ) {
 
     int run = run_and_type_pair.first;
@@ -914,6 +917,7 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
     } // type
 
   } // run
+  std::cout << "Done!" << std::endl;
 
   // Everything is ready to go with one possible exception: if we're working
   // with fake data ntuples, then the "data" histograms of reco-space event
@@ -1307,8 +1311,18 @@ std::unique_ptr< CovMatrixMap > SystematicsCalculator::get_covariances() const
         if ( ntuple_type == NFT::kDetVarMCSCE
           || ntuple_type == NFT::kDetVarMCRecomb2 )
         {
-          std::cout << "Using other CV universe" << std::endl;
+          std::cout << "Using small CV universe" << std::endl;
           detVar_cv_u = detvar_universes_.at( NFT::kDetVarMCCVExtra ).get();
+        }
+        else if ( ntuple_type == NFT::kDetVarMCLYdown )
+        {
+          std::cout << "Using LYDown CV universe" << std::endl;
+          detVar_cv_u = detvar_universes_.at( NFT::kDetVarMCCVLYDown ).get();
+        }
+        else if ( ntuple_type == NFT::kDetVarMCWMdEdx )
+        {
+          std::cout << "Using dEdx CV universe" << std::endl;
+          detVar_cv_u = detvar_universes_.at( NFT::kDetVarMCCVdEdx ).get();
         }
       }
 

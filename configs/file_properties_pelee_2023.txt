@@ -1,0 +1,77 @@
+# Trigger counts and POT exposures are taken from the searching4nues
+# spreadsheet: tinyurl.com/pelee-nue-ntuples
+# file_name run file_type [triggers POT (for data only)]
+#
+# Beam off data
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-bnb_beam_off_peleeTuple_uboone_v08_00_00_70_run1.root 1 extBNB 65744587 0
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-bnb_beam_off_peleeTuple_uboone_v08_00_00_70_run2.root 2 extBNB 153905891 0
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-bnb_beam_off_peleeTuple_uboone_v08_00_00_70_run3.root 3 extBNB 207167629 0
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-Run4a_bnb_beamOff_PeLee_ntuples_run4a_ana.root 40 extBNB 27596585 0
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-fix_bnb_beam_off_pandora_reco2_crt_remerging_run4b_ana.root 41 extBNB 89244940 0
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-run4c_bnb_beam_off_crtremerging_pandora_reco2_run4c_ana.root 42 extBNB 47178301 0
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-Run4d_bnb_beamOff_PeLee_ntuples_run4d_ana_ana.root 43 extBNB 74409530 0
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-Run5_bnb_beamOff_PeLee_ntuples_run5_ana_ana.root 5 extBNB 107466402 0
+#
+# Beam on data (open data)
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-beamon_pelee_ntuple_opendata_run1_5e19_ana.root 1 onBNB 10127569 4.56e19
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-OpenData_bnb_beam_on_peleeTuple_uboone_v08_00_00_70_run2.root 2 onBNB 20421321 8.62e19
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-beamon_pelee_ntuple_opendata_run3_1e19_ana.root 3 onBNB 2387969 9.84e18
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-OpenData_Run4a_bnb_beamOn_PeLee_ntuples_run4a_ana.root 40 onBNB 3266216 1.48e19
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-OpenData_Run4b_bnb_beamOn_PeLee_ntuples_run4b_ana.root 41 onBNB 10660803 4.50e19
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-OpenData_Run4c_bnb_beamOn_PeLee_ntuples_run4c_ana_ana.root 42 onBNB 6690186 2.95e19
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-OpenData_Run4d_bnb_beamOn_PeLee_ntuples_run4d_ana_ana.root 43 onBNB 3693578 1.63e19
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-OpenData_run5_bnb_beamon_PeLEE_ntuples_run5_ana.root 5 onBNB 11637691 4.87e19
+#
+# numu MC samples
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run1_nu.root 1 numuMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run2_nu.root 2 numuMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run3_nu.root 3 numuMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-run4a_bnb_nu_overlay_unified_pandora_reco2_run4a_ana.root 40 numuMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-run4b_bnb_nu_overlay_unified_pandora_reco2_run4b_ana.root 41 numuMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run4c_nu.root 42 numuMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run4d_nu.root 43 numuMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-run5_bnb_nu_overlay_ntuple_v08_00_00_67_run5_ana.root 5 numuMC
+#
+# nue MC samples
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run1_nue.root 1 nueMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run2_nue.root 2 nueMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run3_nue.root 3 nueMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-run4a_bnb_intrnue_overlay_unified_pandora_reco2_run4a_ana.root 40 nueMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-run4b_bnb_nue_overlay_crtremerging_pandora_reco2_run4b_ana.root 41 nueMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-run4c_bnb_nue_overlay_crtremerging_pandora_reco2_respin2_run4c_ana.root 42 nueMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-run4d_bnb_intrinsic_nue_overlay_pandora_unified_reco2_reco2_ana.root 43 nueMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-run5_bnb_intrinsic_nue_overlay_pandora_unified_reco2_reco2_ana.root 5 nueMC
+#
+# dirt MC samples
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run1_dirt.root 1 dirtMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_run2_prodgenie_bnb_dirt_overlay_ana.root 2 dirtMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run3_dirt.root 3 dirtMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-Run4a_BNB_dirt_overlay_Pandora_Unified_Reco2_fixed_run4a_ana.root 40 dirtMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-Run4b_BNB_dirt_overlay_Pandora_Reco2_reco2_ana.root 41 dirtMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run4c_dirt.root 42 dirtMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-Run4d_BNB_dirt_overlay_Pandora_Unified_Reco2_reco2_ana.root 43 dirtMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-overlay_peleeTuple_uboone_v08_00_00_70_run5_dirt_dummy_weights.root 5 dirtMC
+#
+# detVar MC samples
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_CV_reco2_reco2.root 1 detVarCV
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_CVExtra_reco2_reco2.root 1 detVarCVExtra
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_CVLYDown_reco2_reco2.root 1 detVarCVLYDown
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_CVdEdx_reco2_reco2.root 1 detVarCVdEdx
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_LYRayleigh_reco2_reco2.root 1 detVarLYrayl
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_LYAttenuation_reco2_reco2.root 1 detVarLYatten
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_LYDown_reco2_reco2.root 1 detVarLYdown
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_WM_ThetaXZ_reco2_reco2.root 1 detVarWMAngleXZ
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_WM_ThetaYZ_reco2_reco2.root 1 detVarWMAngleYZ
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_WM_X_reco2_reco2.root 1 detVarWMX
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_WM_YZ_reco2_reco2.root 1 detVarWMYZ
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_WM_dEdx_reco2_reco2.root 1 detVarWMdEdx
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_SCE_reco2_reco2.root 1 detVarSCE
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-hadded_prodgenie_bnb_nu_overlay_DetVar_Recomb2_reco2_reco2.root 1 detVarRecomb2
+#
+# NuWro MC samples
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-high_stat_prodgenie_bnb_nu_overlay_DetVar_Run1_NuWro_reco2_reco2.root 1 altCVMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-high_stat_prodgenie_bnb_nu_overlay_DetVar_Run2_NuWro_reco2_reco2.root 2 altCVMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-high_stat_prodgenie_bnb_nu_overlay_DetVar_Run3_NuWro_reco2_reco2.root 3 altCVMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-high_stat_prodgenie_bnb_nu_nuwro_overlay_run4a_pelee.root 40 altCVMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-high_stat_prodgenie_bnb_nu_nuwro_overlay_run4_pelee.root 42 altCVMC
+/exp/uboone/data/users/fmlopez/proton_multiplicity_analysis/ntuples_all_runs/xsec-ana-high_stat_prodgenie_bnb_nu_nuwro_overlay_run5_pelee.root 5 altCVMC

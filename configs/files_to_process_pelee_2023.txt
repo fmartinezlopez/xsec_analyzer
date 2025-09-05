@@ -1,0 +1,129 @@
+# Run 1 beam on
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run1/bnb_beam_on_peleeTuple_uboone_v08_00_00_70_run1_C1.root onBNB
+
+# Run 1 beam off and open data
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run1/bnb_beam_off_peleeTuple_uboone_v08_00_00_70_run1.root extBNB
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run1/beamon_pelee_ntuple_opendata_run1_5e19_ana.root onBNB
+
+# Run 1 CV MC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run1/overlay_peleeTuple_uboone_v08_00_00_70_run1_nu.root numuMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run1/overlay_peleeTuple_uboone_v08_00_00_70_run1_nue.root nueMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run1/overlay_peleeTuple_uboone_v08_00_00_70_run1_dirt.root dirtMC
+
+# Run 1 NuWro
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run1/high_stat_prodgenie_bnb_nu_overlay_DetVar_Run1_NuWro_reco2_reco2.root MC
+
+# Run 2 beam on
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run2/bnb_beam_on_peleeTuple_uboone_v08_00_00_70_run2.root onBNB
+
+# Run 2 beam off and open data
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run2/bnb_beam_off_peleeTuple_uboone_v08_00_00_70_run2.root extBNB
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run2/OpenData_bnb_beam_on_peleeTuple_uboone_v08_00_00_70_run2.root onBNB
+
+# Run 2 CV MC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run2/overlay_peleeTuple_uboone_v08_00_00_70_run2_nu.root numuMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run2/overlay_peleeTuple_uboone_v08_00_00_70_run2_nue.root nueMC
+/exp/uboone/data/users/fmlopez/hadd_pelee/run2_ntuples/hadded_run2_prodgenie_bnb_dirt_overlay_ana.root dirtMC
+
+# Run 2 NuWro
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run2/high_stat_prodgenie_bnb_nu_overlay_DetVar_Run2_NuWro_reco2_reco2.root MC
+
+# Run 3 beam on
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run3/run3_bnb_beam_on_crtremerging_pandora_reco2_run3_ana.root onBNB
+
+# Run 3 beam off and open data
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run3/bnb_beam_off_peleeTuple_uboone_v08_00_00_70_run3.root extBNB
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run3/beamon_pelee_ntuple_opendata_run3_1e19_ana.root onBNB
+
+# Run 3 CV MC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run3/overlay_peleeTuple_uboone_v08_00_00_70_run3_nu.root numuMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run3/overlay_peleeTuple_uboone_v08_00_00_70_run3_nue.root nueMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run3/overlay_peleeTuple_uboone_v08_00_00_70_run3_dirt.root dirtMC
+
+# Run 3 NuWro
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run3/high_stat_prodgenie_bnb_nu_overlay_DetVar_Run3_NuWro_reco2_reco2.root MC
+
+# Run 4a beam on
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4a/Run4a_bnb_beamOn_PeLee_ntuples_run4a_ana.root onBNB
+
+# Run 4a beam off and open data
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4a/Run4a_bnb_beamOff_PeLee_ntuples_run4a_ana.root extBNB
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4a/OpenData_Run4a_bnb_beamOn_PeLee_ntuples_run4a_ana.root onBNB
+
+# Run 4a CV MC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4a/run4a_bnb_nu_overlay_unified_pandora_reco2_run4a_ana.root numuMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4a/run4a_bnb_intrnue_overlay_unified_pandora_reco2_run4a_ana.root nueMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4a/Run4a_BNB_dirt_overlay_Pandora_Unified_Reco2_fixed_run4a_ana.root dirtMC
+
+# Run 4a NuWro
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4a/high_stat_prodgenie_bnb_nu_nuwro_overlay_run4a_pelee.root MC
+
+# Run 4b beam on
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4b/run4b_bnb_beamon_crtremerging_pandora_reco2_run4b_ana.root onBNB
+
+# Run 4b beam off and open data
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4b/fix_bnb_beam_off_pandora_reco2_crt_remerging_run4b_ana.root extBNB
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4b/BeforeCRTRemerge/OpenData_Run4b_bnb_beamOn_PeLee_ntuples_run4b_ana.root onBNB
+
+# Run 4b CV MC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4b/run4b_bnb_nu_overlay_unified_pandora_reco2_run4b_ana.root numuMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4b/run4b_bnb_nue_overlay_crtremerging_pandora_reco2_run4b_ana.root nueMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4b/Run4b_BNB_dirt_overlay_Pandora_Reco2_reco2_ana.root dirtMC
+
+# Run 4c beam on
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4c/run4c_bnb_beamon_crtremerging_pandora_reco2_run4c_ana.root onBNB
+
+# Run 4c beam off and open data
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4c/run4c_bnb_beam_off_crtremerging_pandora_reco2_run4c_ana.root extBNB
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4c/BeforeCRTRemerge/OpenData_Run4c_bnb_beamOn_PeLee_ntuples_run4c_ana_ana.root onBNB
+
+# Run 4c CV MC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4c/overlay_peleeTuple_uboone_v08_00_00_70_run4c_nu.root numuMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4c/run4c_bnb_nue_overlay_crtremerging_pandora_reco2_respin2_run4c_ana.root nueMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4c/overlay_peleeTuple_uboone_v08_00_00_70_run4c_dirt.root dirtMC
+
+# Run 4c NuWro
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4c/high_stat_prodgenie_bnb_nu_nuwro_overlay_run4_pelee.root MC
+
+# Run 4d beam on
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4d/Run4d_bnb_beamOn_PeLee_ntuples_run4d_ana_ana.root onBNB
+
+# Run 4d beam off and open data
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4d/Run4d_bnb_beamOff_PeLee_ntuples_run4d_ana_ana.root extBNB
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4d/OpenData_Run4d_bnb_beamOn_PeLee_ntuples_run4d_ana_ana.root onBNB
+
+# Run 4d CV MC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4d/overlay_peleeTuple_uboone_v08_00_00_70_run4d_nu.root numuMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4d/run4d_bnb_intrinsic_nue_overlay_pandora_unified_reco2_reco2_ana.root nueMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run4d/Run4d_BNB_dirt_overlay_Pandora_Unified_Reco2_reco2_ana.root dirtMC
+
+# Run 5 beam on
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run5/run5_bnb_beamon_PeLEE_ntuples_run5_ana.root onBNB
+
+# Run 5 beam off and open data
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run5/Run5_bnb_beamOff_PeLee_ntuples_run5_ana_ana.root extBNB
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run5/OpenData_run5_bnb_beamon_PeLEE_ntuples_run5_ana.root onBNB
+
+# Run 5 CV MC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run5/run5_bnb_nu_overlay_ntuple_v08_00_00_67_run5_ana.root numuMC
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run5/run5_bnb_intrinsic_nue_overlay_pandora_unified_reco2_reco2_ana.root nueMC
+/exp/uboone/data/users/fmlopez/weights_pelee/run5_ntuples/overlay_peleeTuple_uboone_v08_00_00_70_run5_dirt_dummy_weights.root dirtMC
+
+# Run 5 NuWro
+/pnfs/uboone/persistent/users/cthorpe/PELEE_2023/run5/high_stat_prodgenie_bnb_nu_nuwro_overlay_run5_pelee.root MC
+
+# Hadded detVar
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_CV_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_CVExtra_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_CVLYDown_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_CVdEdx_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_LYRayleigh_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_LYAttenuation_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_LYDown_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_WM_ThetaXZ_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_WM_ThetaYZ_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_WM_X_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_WM_YZ_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_WM_dEdx_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_SCE_reco2_reco2.root DV
+/exp/uboone/data/users/fmlopez/hadd_pelee/detvar_ntuples/hadded_prodgenie_bnb_nu_overlay_DetVar_Recomb2_reco2_reco2.root DV
