@@ -148,6 +148,15 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
   auto* matrix_map_ptr = syst.get_covariances().release();
   auto& matrix_map = *matrix_map_ptr;
 
+  // Write covariance matrices to file
+  File->mkdir("CovarianceMatrix");
+  File->cd("CovarianceMatrix");
+  for ( const auto& pair : matrix_map ) {
+    const auto& key = pair.first;
+    const auto& cov_matrix = pair.second;
+    cov_matrix.cov_matrix_->Write((key+"_matrix").c_str());
+  }
+
   auto* sb_ptr = new SliceBinning( SLICE_Config );
   auto& sb = *sb_ptr;
 
@@ -172,10 +181,15 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
       *reco_mc_plus_ext_hist, slice, &matrix_map.at("PredTotal") );
     slice_mc_plus_ext->hist_->Write("MC_plus_EXT");
 
-    auto chi2_result = slice_bnb->get_chi2( *slice_mc_plus_ext );
-    std::cout << "Slice " << sl_idx << ": \u03C7\u00b2 = "
-      << chi2_result.chi2_ << '/' << chi2_result.num_bins_ << " bins,"
-      << " p-value = " << chi2_result.p_value_ << '\n';
+    // Try to get chi2, may fail for last slice (all bins)
+    try {
+      auto chi2_result = slice_bnb->get_chi2( *slice_mc_plus_ext );
+      std::cout << "Slice " << sl_idx << ": \u03C7\u00b2 = "
+        << chi2_result.chi2_ << '/' << chi2_result.num_bins_ << " bins,"
+        << " p-value = " << chi2_result.p_value_ << '\n';
+    } catch (std::runtime_error) {
+      std::cout << "Couldn't invert covariance matrix!" << '\n';
+    }
 
     // Build a stack of categorized central-value MC predictions plus the
     // extBNB contribution in slice space
@@ -289,7 +303,7 @@ void tutorial_slice_plots(std::string FPM_Config, std::string SYST_Config, std::
       }
 
       slice_for_syst->hist_->Write(key.c_str());
-      cov_matrix.cov_matrix_->Write((key+"_matrix").c_str());
+      //cov_matrix.cov_matrix_->Write((key+"_matrix").c_str());
 
       // Check whether the current covariance matrix name is present in
       // the vector defined above this loop. If it isn't, don't bother to
