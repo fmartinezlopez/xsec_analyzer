@@ -18,8 +18,10 @@ static int verbose_flag;
 
 int main( int argc, char** argv ) {
 
+  gROOT->SetBatch(kTRUE);  // <- THIS disables all GUI windows
+
   int c;
-  TRint app( "app", nullptr, nullptr );
+  //TRint app( "app", nullptr, nullptr );
 
   bool do_res_plots = false;
   bool do_save_config = false;
@@ -109,6 +111,6 @@ int main( int argc, char** argv ) {
   if ( do_res_plots ) mm.ResPlots();
   if ( do_save_config ) mm.Print();
 
-  app.Run();
+  //app.Run();
   return 0;
 }
