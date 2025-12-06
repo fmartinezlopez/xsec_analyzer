@@ -40,8 +40,8 @@ class MakeConfig {
     // reco binning are informed by the expected statistical uncertainties when
     // the full dataset is analyzed.
     //
-    // Full dataset for Runs 1-3
-    static constexpr double EXPECTED_POT = 6.790e20;
+    // Full dataset
+    static constexpr double EXPECTED_POT = 1.1528e21;
 
     // Number of true bins to use when plotting true distributions in a given
     // reco bin
@@ -59,6 +59,11 @@ class MakeConfig {
     static int hist_count;
 
     std::set< int > RUNS;
+
+    void make_sideband_plot( const std::string& branchexpr,
+        const std::string& variable_title, const std::string& selection,
+        const std::set<int>& runs, std::vector<double> bin_low_edges,
+        const std::string& mc_event_weight );
 
     void make_res_plots( const std::string& branchexpr,
         const std::string& variable_title, const std::string& selection,

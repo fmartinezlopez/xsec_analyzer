@@ -57,6 +57,19 @@ MakeConfig::~MakeConfig(){
 
 void MakeConfig::ResPlots() {
 
+  for(int i = 0; i < vect_sideband->size(); i++){
+    ++hist_count;
+    if(vect_sideband->at(i).block_reco_->Is1D()){
+      make_sideband_plot( 
+          vect_sideband->at(i).block_reco_->GetXName(),
+          vect_sideband->at(i).block_reco_->GetXTitle(),
+          vect_sideband->at(i).block_reco_->GetSelection(),
+          RUNS,
+          vect_sideband->at(i).block_reco_->GetVector(),
+          DEFAULT_MC_EVENT_WEIGHT );
+    }
+  }
+
   for(int i = 0; i < vect_block->size(); i++){
     ++hist_count;
     if(vect_block->at(i).block_true_->Is1D()){
@@ -70,6 +83,17 @@ void MakeConfig::ResPlots() {
           vect_block->at(i).block_true_->GetXName(),
           vect_block->at(i).block_true_->GetSelection(),
           DEFAULT_MC_EVENT_WEIGHT );
+        //! NuWro alt MC
+        /* make_res_plots( vect_block->at(i).block_reco_->GetXName(),
+          vect_block->at(i).block_reco_->GetXTitle(),
+          vect_block->at(i).block_reco_->GetSelection(),
+          RUNS,
+          vect_block->at(i).block_reco_->GetVector(),
+          false, false,
+          DEFAULT_TRUE_BINS,
+          vect_block->at(i).block_true_->GetXName(),
+          vect_block->at(i).block_true_->GetSelection(),
+          "1" ); */
     }
     else if(vect_block->at(i).block_true_->Is2D()){
 
@@ -295,7 +319,7 @@ void MakeConfig::Print(){
 
   // Using sideband 
 
-  //  sb.slice_vars_.emplace_back( "sideband",
+  /* //  sb.slice_vars_.emplace_back( "sideband",
   //      "",
   //      "sideband",
   //      "" );
@@ -341,8 +365,102 @@ void MakeConfig::Print(){
         }
       }
     }
-  }
+  } */
 
+  for(int i = 0; i < vect_sideband->size(); i++){
+    if(vect_sideband->at(i).block_reco_->Is1D()){
+      // Add the sideband variable to slice_vars_ first
+      sb.slice_vars_.emplace_back( 
+          vect_sideband->at(i).block_reco_->GetXTitle(),
+          vect_sideband->at(i).block_reco_->GetXTexTitle(),
+          vect_sideband->at(i).block_reco_->GetXTitleUnit(),
+          vect_sideband->at(i).block_reco_->GetXTexTitleUnit() );
+
+      int var_idx = find_slice_var_index(
+        vect_sideband->at(i).block_reco_->GetXTitle(), sb.slice_vars_ );
+
+      auto& bin_sideband_slice = add_slice( sb, vect_sideband->at(i).block_reco_->GetVector(), var_idx );
+      
+      for(int j = 0; j < vect_sideband->at(i).block_reco_->GetNBinsX(); j++){
+        bin_sideband_slice.bin_map_[ j + 1 ].insert( reco_bins.size() );
+        reco_bins.emplace_back( vect_sideband->at(i).block_reco_->GetBinDef(j),
+            RecoBinType(vect_sideband->at(i).block_reco_->GetBinType()), -1 );
+      }
+    }
+    else if(vect_sideband->at(i).block_reco_->Is2D()){
+      // Add X variable for 2D sideband
+      sb.slice_vars_.emplace_back( 
+          vect_sideband->at(i).block_reco_->GetXTitle(),
+          vect_sideband->at(i).block_reco_->GetXTexTitle(),
+          vect_sideband->at(i).block_reco_->GetXTitleUnit(),
+          vect_sideband->at(i).block_reco_->GetXTexTitleUnit() );
+      
+      // Add Y variable for 2D sideband
+      sb.slice_vars_.emplace_back(
+          vect_sideband->at(i).block_reco_->GetYTitle(),
+          vect_sideband->at(i).block_reco_->GetYTexTitle(),
+          vect_sideband->at(i).block_reco_->GetYTitleUnit(),
+          vect_sideband->at(i).block_reco_->GetYTexTitleUnit() );
+
+      int xvar_idx = find_slice_var_index(
+          vect_sideband->at(i).block_reco_->GetXTitle(), sb.slice_vars_ );
+      int yvar_idx = find_slice_var_index(
+          vect_sideband->at(i).block_reco_->GetYTitle(), sb.slice_vars_ );
+
+      for( int j = 0; j < vect_sideband->at(i).block_reco_->GetNBinsX(); j++ ){
+        double xlow = vect_sideband->at(i).block_reco_->GetBinXLow(j);
+        double xhigh = vect_sideband->at(i).block_reco_->GetBinXHigh(j);
+        auto& slice = add_slice( sb, vect_sideband->at(i).block_reco_->GetVector(j),
+            yvar_idx, xvar_idx, xlow, xhigh );
+        for( int k = 0; k < vect_sideband->at(i).block_reco_->GetNBinsY(j); k++ ){
+          slice.bin_map_[ k + 1 ].insert( reco_bins.size() );
+          reco_bins.emplace_back(vect_sideband->at(i).block_reco_->GetBinDef(j, k),
+              RecoBinType(vect_sideband->at(i).block_reco_->GetBinType()), -1 );
+        }
+      }
+    }
+    else if(vect_sideband->at(i).block_reco_->Is3D()){
+      // Handle 3D sidebands similar to 3D signal blocks
+      for( int j = 0; j < vect_sideband->at(i).block_reco_->GetNBinsX(); j++ ){
+
+        std::string slice_title_y = vect_sideband->at(i).block_reco_->GetYTitle() 
+            + "(" + std::to_string(vect_sideband->at(i).block_reco_->GetBinXLow(j)) 
+            + "<=" + vect_sideband->at(i).block_reco_->GetXTitle() + " < " 
+            + std::to_string(vect_sideband->at(i).block_reco_->GetBinXHigh(j)) + ")";
+        std::string slice_title_z = vect_sideband->at(i).block_reco_->GetZTitle() 
+            + "(" + std::to_string(vect_sideband->at(i).block_reco_->GetBinXLow(j)) 
+            + "<=" + vect_sideband->at(i).block_reco_->GetXTitle() + " < " 
+            + std::to_string(vect_sideband->at(i).block_reco_->GetBinXHigh(j)) + ")";
+
+        sb.slice_vars_.emplace_back(
+            slice_title_y,
+            vect_sideband->at(i).block_reco_->GetYTexTitle(),
+            vect_sideband->at(i).block_reco_->GetYTitleUnit(),
+            vect_sideband->at(i).block_reco_->GetYTexTitleUnit() );
+        sb.slice_vars_.emplace_back(
+            slice_title_z,
+            vect_sideband->at(i).block_reco_->GetZTexTitle(),
+            vect_sideband->at(i).block_reco_->GetZTitleUnit(),
+            vect_sideband->at(i).block_reco_->GetZTexTitleUnit() );
+
+        int yvar_idx = find_slice_var_index(slice_title_y, sb.slice_vars_ );
+        int zvar_idx = find_slice_var_index(slice_title_z, sb.slice_vars_ );
+
+        for( int k = 0; k < vect_sideband->at(i).block_reco_->GetNBinsY(j); k++ ){
+          double ylow = vect_sideband->at(i).block_reco_->GetBinYLow(j, k);
+          double yhigh = vect_sideband->at(i).block_reco_->GetBinYHigh(j, k);
+
+          auto& slice = add_slice( sb, vect_sideband->at(i).block_reco_->GetVector(j, k),
+              zvar_idx, yvar_idx, ylow, yhigh );
+          for( int l = 0; l < vect_sideband->at(i).block_reco_->GetNBinsZ(j, k); l++ ){
+            slice.bin_map_[ l + 1 ].insert( reco_bins.size() );
+            reco_bins.emplace_back(vect_sideband->at(i).block_reco_->GetBinDef(j, k, l),
+                RecoBinType(vect_sideband->at(i).block_reco_->GetBinType()), -1 );
+          }
+        }
+      }
+    }
+  }
 
 
   std::cout << DIRECTORY << '\n';
@@ -380,6 +498,55 @@ void MakeConfig::Print(){
     << bin_config_output << '\n';
   std::cout << "Save slice configuration into         => "
    << slice_config_output << '\n';
+}
+
+void MakeConfig::make_sideband_plot( const std::string& branchexpr,
+    const std::string& variable_title, const std::string& selection,
+    const std::set<int>& runs, std::vector<double> bin_low_edges,
+    const std::string& mc_event_weight )
+{
+  const FilePropertiesManager& fpm = FilePropertiesManager::Instance();
+
+  TChain chain( "stv_tree" );
+  double total_simulated_POT = 0.;
+
+  const auto& ntuple_map = fpm.ntuple_file_map();
+  for ( const auto& run : runs ) {
+    const auto& ntuple_files = ntuple_map.at( run )
+      .at( NtupleFileType::kNumuMC );
+    for ( const auto& file_name : ntuple_files ) {
+      chain.Add( file_name.c_str() );
+      TFile temp_file( file_name.c_str(), "read" );
+      TParameter<float>* temp_pot = nullptr;
+      temp_file.GetObject( "summed_pot", temp_pot );
+      total_simulated_POT += temp_pot->GetVal();
+    }
+  }
+
+  int num_bins = bin_low_edges.size() - 1;
+  std::string hist_name = "sideband_" + std::to_string(hist_count);
+  
+  TH1D* hist = new TH1D( hist_name.c_str(),
+      ("Sideband: " + variable_title + "; " + variable_title + "; events").c_str(),
+      num_bins, bin_low_edges.data() );
+
+  std::string cuts = mc_event_weight + " * (is_mc && " + selection + ')';
+  chain.Draw( (branchexpr + " >> " + hist_name).c_str(), cuts.c_str(), "goff" );
+
+  hist->Scale( EXPECTED_POT / total_simulated_POT );
+  for ( int eb = 0; eb <= num_bins + 1; ++eb ) {
+    double bin_events = hist->GetBinContent( eb );
+    hist->SetBinError( eb, std::sqrt( std::max(0., bin_events) ) );
+  }
+
+  hist->SetStats( false );
+  hist->SetLineColor( kBlack );
+  hist->SetLineWidth( 2 );
+
+  OutputFile->cd();
+  OutputFile->mkdir(("Sideband_" + branchexpr).c_str());
+  OutputFile->cd(("Sideband_" + branchexpr).c_str());
+  hist->Write();
 }
 
 void MakeConfig::make_res_plots( const std::string& branchexpr,
@@ -420,7 +587,11 @@ void MakeConfig::make_res_plots( const std::string& branchexpr,
   for ( const auto& run : runs ) {
     const auto& ntuple_files = ntuple_map.at( run )
       .at( NtupleFileType::kNumuMC );
+    //! NuWro alt MC
+    //const auto& ntuple_files = ntuple_map.at( run )
+    //  .at( NtupleFileType::kAltCVMC );
     for ( const auto& file_name : ntuple_files ) {
+      std::cout << "    Filename: " << file_name << std::endl;
       chain.Add( file_name.c_str() );
 
       TFile temp_file( file_name.c_str(), "read" );
@@ -543,10 +714,10 @@ void MakeConfig::make_res_plots( const std::string& branchexpr,
   OutputFile->cd(("1D" + smear_hist_name + branchexpr).c_str());
   expected_reco_hist->Write();
 
-  TCanvas* c_expected = new TCanvas;
-  expected_reco_hist->Draw( "hist e" );
+  //TCanvas* c_expected = new TCanvas;
+  //expected_reco_hist->Draw( "hist e" );
 
-  c_expected->SaveAs(TString(smear_hist_name) + TString(branchexpr) + "_hist.png");
+  //c_expected->SaveAs(TString(smear_hist_name) + TString(branchexpr) + "_hist.png");
 
   // Normalize the smearing matrix elements so that a sum over all reco bins
   // (including the under/overflow bins) yields a value of one. This means that
@@ -605,21 +776,22 @@ void MakeConfig::make_res_plots( const std::string& branchexpr,
   smear_hist->Write();
 
   // Draw the smearing matrix plot
-  TCanvas* c_smear = new TCanvas;
-  c_smear->SetBottomMargin( 0.15 );
-  c_smear->SetLeftMargin( 0.13 );
+  //TCanvas* c_smear = new TCanvas;
+  //c_smear->SetBottomMargin( 0.15 );
+  //c_smear->SetLeftMargin( 0.13 );
 
-  if ( show_smear_numbers ) {
-    // Round all numbers to this precision when rendering them
-    gStyle->SetPaintTextFormat( "4.2f" );
+  //if ( show_smear_numbers ) {
+  //  // Round all numbers to this precision when rendering them
+  //  gStyle->SetPaintTextFormat( "4.2f" );
+  //
+  //  smear_hist->Draw("text colz");
+  //}
+  //else {
+  //  smear_hist->Draw( "colz" );
+  //}
 
-    smear_hist->Draw("text colz");
-  }
-  else {
-    smear_hist->Draw( "colz" );
-  }
+  //c_smear->SaveAs(TString(smear_hist_name) + TString(branchexpr) + ".png");
 
-  c_smear->SaveAs(TString(smear_hist_name) + TString(branchexpr) + ".png");
   // For each true bin, print the fraction of events that are reconstructed
   // in the correct corresponding reco bin.
   printf("Diagonal of 1D %dx%d smear matrix of ", num_reco_bins, num_reco_bins);
@@ -654,6 +826,8 @@ void MakeConfig::make_res_plots( const std::string& branchexpr,
 void MakeConfig::make_res_plots(std::istream& in_stream, const std::set<int>& runs, const std::string& str_title, const std::string& str_units){
 
   const std::string& universe_branch_name = "TunedCentralValue_UBGenie";
+  //! NuWro alt MC
+  //const std::string& universe_branch_name = "unweighted";
   size_t universe_index = 0u;
   bool show_smear_numbers = false;
   return make_res_plots(in_stream, runs, universe_branch_name, universe_index, show_smear_numbers, str_title, str_units);
@@ -690,6 +864,9 @@ void MakeConfig::make_res_plots( std::istream& in_stream,
   for ( const auto& run : runs ) {
     const auto& ntuple_files = ntuple_map.at( run )
       .at( NtupleFileType::kNumuMC );
+    //! NuWro alt MC
+    //const auto& ntuple_files = ntuple_map.at( run )
+    //  .at( NtupleFileType::kAltCVMC );
     for ( const auto& file_name : ntuple_files ) {
       um.add_input_file( file_name );
       std::cout << file_name << '\n';
@@ -701,6 +878,8 @@ void MakeConfig::make_res_plots( std::istream& in_stream,
       total_simulated_POT += pot;
     }
   }
+
+  std::cout << "Total simulated POT: " << total_simulated_POT << std::endl;
 
 
   // Look up the MC event weights from the input files and construct the
@@ -764,9 +943,9 @@ void MakeConfig::make_res_plots( std::istream& in_stream,
   OutputFile->cd(("2D" + variable_save).c_str());
   expected_reco_hist->Write();
 
-  TCanvas* c_expected = new TCanvas;
-  expected_reco_hist->Draw( "hist e" );
-  c_expected->SaveAs(TString(c_expected->GetName()) + variable_save + "_hist.png");
+  //TCanvas* c_expected = new TCanvas;
+  //expected_reco_hist->Draw( "hist e" );
+  //c_expected->SaveAs(TString(c_expected->GetName()) + variable_save + "_hist.png");
 
   // Normalize the smearing matrix elements so that a sum over all reco bins
   // (including the under/overflow bins) yields a value of one. This means that
@@ -827,46 +1006,46 @@ void MakeConfig::make_res_plots( std::istream& in_stream,
   smear_hist->Write();
 
   // Draw the smearing matrix plot
-  TCanvas* c_smear = new TCanvas;
-  c_smear->SetBottomMargin( 0.15 );
-  c_smear->SetLeftMargin( 0.13 );
+  //TCanvas* c_smear = new TCanvas;
+  //c_smear->SetBottomMargin( 0.15 );
+  //c_smear->SetLeftMargin( 0.13 );
 
-  if ( show_smear_numbers ) {
-    // Round all numbers to this precision when rendering them
-    gStyle->SetPaintTextFormat( "4.2f" );
-
-    smear_hist->Draw("text colz");
-  }
-  else {
-    smear_hist->Draw( "colz" );
-  }
+  //if ( show_smear_numbers ) {
+  //  // Round all numbers to this precision when rendering them
+  //  gStyle->SetPaintTextFormat( "4.2f" );
+  //
+  //  smear_hist->Draw("text colz");
+  //}
+  //else {
+  //  smear_hist->Draw( "colz" );
+  //}
 
   // Draw a vertical red line to separate the signal true bins from the
   // background true bins in the smearing matrix plot. Start by finding
   // where the first background bin is. Here we assume that the full set
   // of signal bins comes before any background bins.
-  const auto& true_bins = um.true_bins();
-  size_t num_true_bins = true_bins.size();
-  size_t first_bkgd_bin_idx = num_true_bins;
-  for ( size_t t = 0u; t < num_true_bins; ++t ) {
-    const auto& tbin = true_bins.at( t );
-    if ( tbin.type_ == TrueBinType::kBackgroundTrueBin ) {
-      first_bkgd_bin_idx = t;
-      break;
-    }
-  }
+  //const auto& true_bins = um.true_bins();
+  //size_t num_true_bins = true_bins.size();
+  //size_t first_bkgd_bin_idx = num_true_bins;
+  //for ( size_t t = 0u; t < num_true_bins; ++t ) {
+  //  const auto& tbin = true_bins.at( t );
+  //  if ( tbin.type_ == TrueBinType::kBackgroundTrueBin ) {
+  //    first_bkgd_bin_idx = t;
+  //    break;
+  //  }
+  //}
 
   // We've found the bin index. Now draw the line to indicate the
   // signal/background boundary in true space
-  TLine* bkgd_line = new TLine( first_bkgd_bin_idx, 0.,
-      first_bkgd_bin_idx, num_reco_bins );
+  //TLine* bkgd_line = new TLine( first_bkgd_bin_idx, 0.,
+  //    first_bkgd_bin_idx, num_reco_bins );
+  //bkgd_line->SetLineColor( kRed );
+  //bkgd_line->SetLineWidth( 3 );
+  //bkgd_line->SetLineStyle( 2 );
+  //bkgd_line->Draw( "same" );
 
-  bkgd_line->SetLineColor( kRed );
-  bkgd_line->SetLineWidth( 3 );
-  bkgd_line->SetLineStyle( 2 );
-  bkgd_line->Draw( "same" );
+  //c_smear->SaveAs(TString(c_smear->GetName()) + variable_save + "_smear.png");
 
-  c_smear->SaveAs(TString(c_smear->GetName()) + variable_save + "_smear.png");
   // For each true bin, print the fraction of events that are reconstructed
   // in the correct corresponding reco bin.
   //for ( int bb = 1; bb <= num_reco_bins; ++bb ) {
