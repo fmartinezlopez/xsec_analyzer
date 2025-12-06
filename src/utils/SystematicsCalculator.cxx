@@ -154,8 +154,7 @@ SystematicsCalculator::SystematicsCalculator(
   const auto& category_map = sel_for_categ_->category_map();
   Universe::set_num_categories( category_map.size() );
 
-
-
+  // Check if pre-computed POT is stored
   /* if ( !total_subdir ) {
 
     // We couldn't find the pre-computed POT-summed universe histograms,
@@ -178,6 +177,12 @@ SystematicsCalculator::SystematicsCalculator(
   } */
 
   //! Trick for fake data
+  // Recompute POT each time
+  // Check and delete existing directory
+  if (root_tdir->GetDirectory(total_subfolder_name.c_str())) {
+      std::cout << "    Deleting univ directory..." << std::endl;
+      root_tdir->Delete(total_subfolder_name.c_str());
+  }
   this->build_universes( *root_tdir );
   total_subdir = new TDirectoryFile( total_subfolder_name.c_str(),
     "universes", "", root_tdir );
@@ -396,9 +401,28 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
   std::map< int, double > run_to_ext_trigs_map;
 
   //! Trick for fake data
-  //std::vector< double > EXPECTED_BNB_POT = {1.62e20, 2.62e20, 2.55e20};
-  //std::vector< double > EXPECTED_BNB_TRIGGERS = {36139233, 62045760, 61012955};
-  //int run_index = 0;
+  std::map< int, double > EXPECTED_BNB_POT = { {  1, 1.67e20 },
+                                               {  2, 2.61e20 },
+                                               {  3, 2.57e20 },
+                                               { 40, 3.20e20 },
+                                               //{ 40, 4.50e19 },
+                                               //{ 41, 1.36e20 },
+                                               //{ 42, 8.95e19 },
+                                               //{ 43, 4.93e19 },
+                                               {  5, 1.48e20 } };
+
+  std::map< int, double > EXPECTED_BNB_TRIGGERS = { {  1, 37273255.0 },
+                                                    {  2, 61882791.0 },
+                                                    {  3, 61375491.0 },
+                                                    { 40, 73669038.0 },
+                                                    //{ 40,  9897624.0 },
+                                                    //{ 41, 32305463.0 },
+                                                    //{ 42, 20273291.0 },
+                                                    //{ 43, 11192660.0 },
+                                                    {  5, 35265730.0 } };
+
+  std::map< int, double > run_to_fake_pot_map;
+  std::map< int, double > run_to_fake_trigs_map;
 
   const auto& fpm = FilePropertiesManager::Instance();
   const auto& data_norm_map = fpm.data_norm_map();
@@ -414,14 +438,19 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
       if ( !run_to_bnb_pot_map.count(run) ) {
         run_to_bnb_pot_map[ run ] = 0.;
         run_to_bnb_trigs_map[ run ] = 0.;
+        run_to_fake_pot_map[ run ] = 0.;
+        run_to_fake_trigs_map[ run ] = 0.;
       }
 
       run_to_bnb_pot_map.at( run ) += pot_and_trigs.pot_;
       run_to_bnb_trigs_map.at( run ) += pot_and_trigs.trigger_count_;
 
       //! Trick for fake data
-      //run_to_bnb_pot_map.at( run ) += EXPECTED_BNB_POT[run_index];
-      //run_to_bnb_trigs_map.at( run ) += EXPECTED_BNB_TRIGGERS[run_index];
+      //run_to_bnb_pot_map.at( run ) += EXPECTED_BNB_POT[run];
+      //run_to_bnb_trigs_map.at( run ) += EXPECTED_BNB_TRIGGERS[run];
+
+      //run_to_fake_pot_map.at( run ) += pot_and_trigs.pot_;
+      //run_to_fake_trigs_map.at( run ) += pot_and_trigs.trigger_count_;
 
     } // BNB data files
 
@@ -436,8 +465,6 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
       run_to_ext_trigs_map.at( run ) += pot_and_trigs.trigger_count_;
 
     } // EXT files
-    //! Trick for fake data
-    //run_index++;
   } // runs
   std::cout << "Done!" << std::endl;
 
@@ -512,11 +539,22 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
           // when using fake data, use the weighted CV histogram if it is present
           auto tmp_reco_hist = type == NFT::kOnBNB ? get_object_unique_ptr<TH1D>((CV_UNIV_NAME + "_0_reco").c_str(), *subdir) : nullptr;
           const auto dataContainsWeightedCV = tmp_reco_hist.get() != nullptr;
+
+          if (dataContainsWeightedCV) std::cout << "    Using weighted CV for kOnBNB histograms!" << std::endl;
           
           auto reco_hist = dataContainsWeightedCV ? std::move(tmp_reco_hist) : get_object_unique_ptr<TH1D>("unweighted_0_reco", *subdir);
 
           const std::string reco_hist2d_name = (dataContainsWeightedCV ? CV_UNIV_NAME : "unweighted") + "_0_reco2d";
           auto reco_hist2d = get_object_unique_ptr<TH2D>(reco_hist2d_name.c_str(), *subdir);
+
+          //! Trick for fake data
+          //if ( type == NFT::kOnBNB ) {
+          //  std::cout << "    Scaling fake data to full dataset POT for run " << run << std::endl;
+          //  double bnb_pot = run_to_bnb_pot_map.at( run );
+          //  double fake_pot = run_to_fake_pot_map.at( run );
+          //  reco_hist->Scale( bnb_pot / fake_pot );
+          //  reco_hist2d->Scale( bnb_pot / fake_pot );
+          //}
 
           // If we're working with EXT data, scale it to the corresponding
           // number of triggers from the BNB data from the same run
@@ -666,6 +704,15 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
 
           auto h_true2d = get_object_unique_ptr< TH2D >(
             (hist_name_prefix + "_true2d"), *subdir );
+
+          //! Trick for fake data
+          //double fake_scale_factor = run_to_bnb_pot_map.at( run ) / run_to_fake_pot_map.at( run );
+          //h_reco->Scale( fake_scale_factor );
+          //h_true->Scale( fake_scale_factor );
+          //h_2d->Scale( fake_scale_factor );
+          //h_categ->Scale( fake_scale_factor );
+          //h_reco2d->Scale( fake_scale_factor );
+          //h_true2d->Scale( fake_scale_factor );
 
           // Add their contributions to the owned histograms for the
           // current Universe object
