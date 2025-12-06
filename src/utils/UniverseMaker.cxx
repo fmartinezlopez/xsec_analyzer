@@ -202,7 +202,7 @@ void UniverseMaker::build_universes(
   // Now prepare the vectors of Universe objects with the correct sizes
   this->prepare_universes( wh );
 
-  int treenumber = 0;
+  int treenumber = -1;
   for ( long long entry = 0; entry < input_chain_.GetEntries(); ++entry ) {
     // Load the TTree for the current TChain entry
     input_chain_.LoadTree( entry );
@@ -211,9 +211,9 @@ void UniverseMaker::build_universes(
     // TTreeFormula objects make the necessary updates
     if ( treenumber != input_chain_.GetTreeNumber() ) {
       treenumber = input_chain_.GetTreeNumber();
-      for ( auto& tbf : true_bin_formulas_ ) tbf->Notify();
-      for ( auto& rbf : reco_bin_formulas_ ) rbf->Notify();
-      for ( auto& cbf : category_formulas_ ) cbf->Notify();
+      for ( auto& tbf : true_bin_formulas_ ) { tbf->Notify(); tbf->UpdateFormulaLeaves(); }
+      for ( auto& rbf : reco_bin_formulas_ ) { rbf->Notify(); rbf->UpdateFormulaLeaves(); }
+      for ( auto& cbf : category_formulas_ ) { cbf->Notify(); cbf->UpdateFormulaLeaves(); }
     }
 
     // Find the reco bin(s) that should be filled for the current event
