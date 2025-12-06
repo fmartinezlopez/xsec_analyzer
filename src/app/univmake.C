@@ -122,6 +122,7 @@ int main( int argc, char* argv[] ) {
     univ_maker.add_input_file( input_file_name.c_str() );
 
     bool has_event_weights = is_reweightable_mc_ntuple( input_file_name );
+    std::cout << "    DEBUG: Reweightable MC ntuple? " << has_event_weights << std::endl;
 
     if ( has_event_weights ) {
       // If the check above was successful, then run all of the histogram

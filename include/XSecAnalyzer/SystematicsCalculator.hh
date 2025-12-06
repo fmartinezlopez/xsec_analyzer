@@ -333,4 +333,5 @@ class SystematicsCalculator {
     /// Default to using real data to report a measurement in
     /// get_measured_events()
     MeasurementMode measurement_mode_ = MeasurementMode::RealData;
+    //MeasurementMode measurement_mode_ = MeasurementMode::ClosureTest;
 };

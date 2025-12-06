@@ -19,7 +19,7 @@
 std::string PlotExtension = ".pdf";
 std::string TextExtension = ".txt";
 bool DumpToText = false;
-bool DumpToPlot = true;
+bool DumpToPlot = false;
 
 void Unfolder(std::string XSEC_Config, std::string SLICE_Config, std::string OutputDirectory, std::string OutputFileName) {
 
