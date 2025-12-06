@@ -100,18 +100,22 @@ void CC1muNp0piEnriched::compute_true_observables( AnalysisEvent* Event ) {
     mc_delta_pTx_ = stv_tools.ReturnPtx();
     mc_delta_pTy_ = stv_tools.ReturnPty();
 
-    mc_cos_theta_mu_p_ = mc_p3mu->Dot(*mc_p3p) / mc_p3mu->Mag() / mc_p3p->Mag();
+    (*mc_p_li_vec_)[0] = mc_p3p->Mag();
+    (*mc_cos_theta_mu_li_vec_)[0] = mc_p3mu->Dot(*mc_p3p) / mc_p3mu->Mag() / mc_p3p->Mag();
 
     // This is terrible...
     size_t n_mc_protons = mc_p3_p_vec_->size();
     if (n_mc_protons > 1) {
-      mc_cos_theta_mu_p2_ = mc_p3mu->Dot(mc_p3_p_vec_->at(1)) / mc_p3mu->Mag() / mc_p3_p_vec_->at(1).Mag();
+      (*mc_p_li_vec_)[1] = mc_p3_p_vec_->at(1).Mag();
+      (*mc_cos_theta_mu_li_vec_)[1] = mc_p3mu->Dot(mc_p3_p_vec_->at(1)) / mc_p3mu->Mag() / mc_p3_p_vec_->at(1).Mag();
     }
     if (n_mc_protons > 2) {
-      mc_cos_theta_mu_p3_ = mc_p3mu->Dot(mc_p3_p_vec_->at(2)) / mc_p3mu->Mag() / mc_p3_p_vec_->at(2).Mag();
+      (*mc_p_li_vec_)[2] = mc_p3_p_vec_->at(2).Mag();
+      (*mc_cos_theta_mu_li_vec_)[2] = mc_p3mu->Dot(mc_p3_p_vec_->at(2)) / mc_p3mu->Mag() / mc_p3_p_vec_->at(2).Mag();
     }
     if (n_mc_protons > 3) {
-      mc_cos_theta_mu_p4_ = mc_p3mu->Dot(mc_p3_p_vec_->at(3)) / mc_p3mu->Mag() / mc_p3_p_vec_->at(3).Mag();
+      (*mc_p_li_vec_)[3] = mc_p3_p_vec_->at(3).Mag();
+      (*mc_cos_theta_mu_li_vec_)[3] = mc_p3mu->Dot(mc_p3_p_vec_->at(3)) / mc_p3mu->Mag() / mc_p3_p_vec_->at(3).Mag();
     }
 
     mc_e_had_vis_ = std::accumulate( mc_p3_p_vec_->begin(), mc_p3_p_vec_->end(), 0.0,
@@ -251,18 +255,22 @@ void CC1muNp0piEnriched::compute_reco_observables( AnalysisEvent* Event ) {
     delta_pTx_ = stv_tools.ReturnPtx();
     delta_pTy_ = stv_tools.ReturnPty();
 
-    cos_theta_mu_p_ = p3mu->Dot(*p3p) / p3mu->Mag() / p3p->Mag();
+    (*p_li_vec_)[0] = p3p->Mag();
+    (*cos_theta_mu_li_vec_)[0] = p3mu->Dot(*p3p) / p3mu->Mag() / p3p->Mag();
 
     // This is, again, terrible...
     size_t n_protons = p3_p_vec_->size();
     if (n_protons > 1) {
-      cos_theta_mu_p2_ = p3mu->Dot(p3_p_vec_->at(1)) / p3mu->Mag() / p3_p_vec_->at(1).Mag();
+      (*p_li_vec_)[1] = p3_p_vec_->at(1).Mag();
+      (*cos_theta_mu_li_vec_)[1] = p3mu->Dot(p3_p_vec_->at(1)) / p3mu->Mag() / p3_p_vec_->at(1).Mag();
     }
     if (n_protons > 2) {
-      cos_theta_mu_p3_ = p3mu->Dot(p3_p_vec_->at(2)) / p3mu->Mag() / p3_p_vec_->at(2).Mag();
+      (*p_li_vec_)[2] = p3_p_vec_->at(2).Mag();
+      (*cos_theta_mu_li_vec_)[2] = p3mu->Dot(p3_p_vec_->at(2)) / p3mu->Mag() / p3_p_vec_->at(2).Mag();
     }
     if (n_protons > 3) {
-      cos_theta_mu_p4_ = p3mu->Dot(p3_p_vec_->at(3)) / p3mu->Mag() / p3_p_vec_->at(3).Mag();
+      (*p_li_vec_)[3] = p3_p_vec_->at(3).Mag();
+      (*cos_theta_mu_li_vec_)[3] = p3mu->Dot(p3_p_vec_->at(3)) / p3mu->Mag() / p3_p_vec_->at(3).Mag();
     }
 
     e_had_vis_ = std::accumulate( p3_p_vec_->begin(), p3_p_vec_->end(), 0.0,
@@ -721,10 +729,8 @@ void CC1muNp0piEnriched::define_output_branches() {
   set_branch( &pn_, "reco_pn" );
   set_branch( &delta_pTx_, "reco_delta_pTx" );
   set_branch( &delta_pTy_, "reco_delta_pTy" );
-  set_branch( &cos_theta_mu_p_, "reco_cos_theta_mu_p" );
-  set_branch( &cos_theta_mu_p2_, "reco_cos_theta_mu_p2" );
-  set_branch( &cos_theta_mu_p3_, "reco_cos_theta_mu_p3" );
-  set_branch( &cos_theta_mu_p4_, "reco_cos_theta_mu_p4" );
+  set_branch( p_li_vec_, "reco_p_li_vec" );
+  set_branch( cos_theta_mu_li_vec_, "reco_cos_theta_mu_li_vec" );
   set_branch( &e_had_vis_, "reco_e_had_vis" );
 
   set_branch( p3mu, "reco_p3_mu" );
@@ -738,10 +744,8 @@ void CC1muNp0piEnriched::define_output_branches() {
   set_branch( &mc_pn_, "true_pn" );
   set_branch( &mc_delta_pTx_, "true_delta_pTx" );
   set_branch( &mc_delta_pTy_, "true_delta_pTy" );
-  set_branch( &mc_cos_theta_mu_p_, "true_cos_theta_mu_p" );
-  set_branch( &mc_cos_theta_mu_p2_, "true_cos_theta_mu_p2" );
-  set_branch( &mc_cos_theta_mu_p3_, "true_cos_theta_mu_p3" );
-  set_branch( &mc_cos_theta_mu_p4_, "true_cos_theta_mu_p4" );
+  set_branch( mc_p_li_vec_, "true_p_li_vec" );
+  set_branch( mc_cos_theta_mu_li_vec_, "true_cos_theta_mu_li_vec" );
   set_branch( &mc_e_had_vis_, "true_e_had_vis" );
 
   set_branch( mc_p3mu, "true_p3_mu" );
@@ -785,10 +789,10 @@ void CC1muNp0piEnriched::reset() {
   pn_ = BOGUS;
   delta_pTx_ = BOGUS;
   delta_pTy_ = BOGUS;
-  cos_theta_mu_p_ = BOGUS;
-  cos_theta_mu_p2_ = BOGUS;
-  cos_theta_mu_p3_ = BOGUS;
-  cos_theta_mu_p4_ = BOGUS;
+  p_li_vec_->clear();
+  p_li_vec_->resize(4, BOGUS);
+  cos_theta_mu_li_vec_->clear();
+  cos_theta_mu_li_vec_->resize(4, BOGUS);
   e_had_vis_ = BOGUS;
 
   *p3mu = TVector3();
@@ -802,10 +806,10 @@ void CC1muNp0piEnriched::reset() {
   mc_pn_ = BOGUS;
   mc_delta_pTx_ = BOGUS;
   mc_delta_pTy_ = BOGUS;
-  mc_cos_theta_mu_p_ = BOGUS;
-  mc_cos_theta_mu_p2_ = BOGUS;
-  mc_cos_theta_mu_p3_ = BOGUS;
-  mc_cos_theta_mu_p4_ = BOGUS;
+  mc_p_li_vec_->clear();
+  mc_p_li_vec_->resize(4, BOGUS);
+  mc_cos_theta_mu_li_vec_->clear();
+  mc_cos_theta_mu_li_vec_->resize(4, BOGUS);
   mc_e_had_vis_= BOGUS;
 
   *mc_p3mu = TVector3();

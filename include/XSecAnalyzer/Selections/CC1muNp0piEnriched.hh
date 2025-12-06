@@ -55,10 +55,8 @@ private:
   double pn_;
   double delta_pTx_;
   double delta_pTy_;
-  double cos_theta_mu_p_;
-  double cos_theta_mu_p2_;
-  double cos_theta_mu_p3_;
-  double cos_theta_mu_p4_;
+  MyPointer< std::vector< double > > p_li_vec_;
+  MyPointer< std::vector< double > > cos_theta_mu_li_vec_;
   double e_had_vis_;
 
   MyPointer< TVector3 > p3mu;
@@ -72,10 +70,8 @@ private:
   double mc_pn_;
   double mc_delta_pTx_;
   double mc_delta_pTy_;
-  double mc_cos_theta_mu_p_;
-  double mc_cos_theta_mu_p2_;
-  double mc_cos_theta_mu_p3_;
-  double mc_cos_theta_mu_p4_;
+  MyPointer< std::vector< double > > mc_p_li_vec_;
+  MyPointer< std::vector< double > > mc_cos_theta_mu_li_vec_;
   double mc_e_had_vis_;
 
   MyPointer< TVector3 > mc_p3mu;
