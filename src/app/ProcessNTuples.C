@@ -149,6 +149,8 @@ int main( int argc, char* argv[] ) {
   long long events_entry = 0;
   while ( true ) {
 
+    //if ( events_entry > 1000 ) break;
+
     if ( events_entry % 1000 == 0 ) {
       std::cout << "Processing event #" << events_entry << '\n';
     }

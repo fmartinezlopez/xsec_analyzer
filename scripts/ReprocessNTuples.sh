@@ -29,7 +29,7 @@ while read line; do
   # one non-whitespace character. These are assumed to be input file names
   if [[ ! $line = \#* ]] && [[ $line = *[^[:space:]]* ]]; then
     # Process the next input ntuple file
-      input_files+=(${line})
+      input_files+=("${line}")
   fi
 done < "${ntuple_list_file}"
 

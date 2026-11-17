@@ -311,7 +311,7 @@ bool CC1mu1p0pi::is_selected( AnalysisEvent& ev ) {
     bool mu_end_contained = this->get_fv().is_inside(
       mu_trk_end_x, mu_trk_end_y, mu_trk_end_z );
 
-    double mu_mom = muon_mom_range->at( mu_idx ); // GeV/c
+    mu_mom = muon_mom_range->at( mu_idx ); // GeV/c
 
     // If exiting muon, switch to MCS and recalculate the momentum
     if ( !mu_end_contained ) {
@@ -512,36 +512,47 @@ bool CC1mu1p0pi::is_selected( AnalysisEvent& ev ) {
     in.at( "backtracked_py" ) >> bt_py;
     in.at( "backtracked_pz" ) >> bt_pz;
 
-    TVector3 p3_mu_bt( bt_px->at( mu_idx ),
-      bt_py->at( mu_idx ), bt_pz->at( mu_idx ) );
+    // Backtracked momenta are MC-truth-only. For data these branches
+    // are present but empty, so skip backtracking and leave the
+    // BackTrack_* observables at their BOGUS defaults
+    size_t max_idx = static_cast<size_t>( std::max( mu_idx, p_idx ) );
+    bool bt_available = bt_px && bt_py && bt_pz
+      && bt_px->size() > max_idx
+      && bt_py->size() > max_idx
+      && bt_pz->size() > max_idx;
 
-    TVector3 p3_p_bt( bt_px->at( p_idx ), bt_py->at( p_idx ),
-      bt_pz->at( p_idx ) );
+    if ( bt_available ) {
+      TVector3 p3_mu_bt( bt_px->at( mu_idx ),
+        bt_py->at( mu_idx ), bt_pz->at( mu_idx ) );
 
-    KICalculator bt_ki_calc( p3_mu_bt, p3_p_bt, ki_calc_type_ );
+      TVector3 p3_p_bt( bt_px->at( p_idx ), bt_py->at( p_idx ),
+        bt_pz->at( p_idx ) );
 
-    backTrack_pT = bt_ki_calc.pT();
-    backTrack_pTx = bt_ki_calc.pTx();
-    backTrack_pTy = bt_ki_calc.pTy();
-    backTrack_pL = bt_ki_calc.pL();
-    backTrack_pn = bt_ki_calc.pn();
-    backTrack_pn_perp = bt_ki_calc.pn_perp();
-    backTrack_pn_perpx = bt_ki_calc.pn_perpx();
-    backTrack_pn_perpy = bt_ki_calc.pn_perpy();
-    backTrack_pn_par = bt_ki_calc.pn_par();
-    backTrack_delta_alphaT = bt_ki_calc.delta_alphaT();
-    backTrack_delta_alpha3D_q = bt_ki_calc.delta_alpha3D_q();
-    backTrack_delta_alpha3D_mu = bt_ki_calc.delta_alpha3D_mu();
-    backTrack_delta_phiT = bt_ki_calc.delta_phiT();
-    backTrack_delta_phi3D = bt_ki_calc.delta_phi3D();
-    backTrack_Ecal = bt_ki_calc.Ecal();
-    backTrack_E_QE = bt_ki_calc.E_QE();
-    backTrack_Q2 = bt_ki_calc.Q2();
-    backTrack_A = bt_ki_calc.A();
-    backTrack_E_miss = bt_ki_calc.E_miss();
-    backTrack_k_miss = bt_ki_calc.k_miss();
-    backTrack_p_miss = bt_ki_calc.p_miss();
-    backTrack_p_miss_minus = bt_ki_calc.p_miss_minus();
+      KICalculator bt_ki_calc( p3_mu_bt, p3_p_bt, ki_calc_type_ );
+
+      backTrack_pT = bt_ki_calc.pT();
+      backTrack_pTx = bt_ki_calc.pTx();
+      backTrack_pTy = bt_ki_calc.pTy();
+      backTrack_pL = bt_ki_calc.pL();
+      backTrack_pn = bt_ki_calc.pn();
+      backTrack_pn_perp = bt_ki_calc.pn_perp();
+      backTrack_pn_perpx = bt_ki_calc.pn_perpx();
+      backTrack_pn_perpy = bt_ki_calc.pn_perpy();
+      backTrack_pn_par = bt_ki_calc.pn_par();
+      backTrack_delta_alphaT = bt_ki_calc.delta_alphaT();
+      backTrack_delta_alpha3D_q = bt_ki_calc.delta_alpha3D_q();
+      backTrack_delta_alpha3D_mu = bt_ki_calc.delta_alpha3D_mu();
+      backTrack_delta_phiT = bt_ki_calc.delta_phiT();
+      backTrack_delta_phi3D = bt_ki_calc.delta_phi3D();
+      backTrack_Ecal = bt_ki_calc.Ecal();
+      backTrack_E_QE = bt_ki_calc.E_QE();
+      backTrack_Q2 = bt_ki_calc.Q2();
+      backTrack_A = bt_ki_calc.A();
+      backTrack_E_miss = bt_ki_calc.E_miss();
+      backTrack_k_miss = bt_ki_calc.k_miss();
+      backTrack_p_miss = bt_ki_calc.p_miss();
+      backTrack_p_miss_minus = bt_ki_calc.p_miss_minus();
+    }
   }
 
   auto& out = ev.out();
