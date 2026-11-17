@@ -1,6 +1,7 @@
 // XSecAnalyzer includes
 #include "XSecAnalyzer/Selections/CC1mu1p0pi.hh"
 #include "XSecAnalyzer/Selections/CC1mu2p0pi.hh"
+#include "XSecAnalyzer/Selections/CC1mu2p0piv2.hh"
 #include "XSecAnalyzer/Selections/CC1muNp0pi.hh"
 #include "XSecAnalyzer/Selections/CC1muXpWC.hh"
 #include "XSecAnalyzer/Selections/NuMICC1e.hh"
@@ -22,6 +23,9 @@ SelectionBase* SelectionFactory::CreateSelection(
   }
   else if ( selection_name == "CC1mu2p0pi" ) {
     sel = new CC1mu2p0pi;
+  }
+  else if ( selection_name == "CC1mu2p0piv2" ) {
+    sel = new CC1mu2p0piv2;
   }
   else if ( selection_name == "CC1muNp0pi" ) {
     sel = new CC1muNp0pi;
