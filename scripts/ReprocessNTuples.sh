@@ -44,14 +44,21 @@ do
     input_file_name=$( echo $file | awk '{print $1}' )
     input_file_type=$( echo $file | awk '{print $2}' )
     output_file_name="${output_dir}/xsec-ana-$(basename ${input_file_name})"
+    # Detector-variation samples only need the CV weight (their universes are
+    # never reweighted), so skip the systematic weight branches for them
+    extra_options=""
+    if [ "${input_file_type}" = "DV" ]; then
+      extra_options="--no-syst-weights"
+    fi
     echo "Starting file:"${counter}"/"${total_files}
     echo "Input file name: "${input_file_name}
     echo "Input file type: "${input_file_type}
     echo "Selections: "${selections}
     echo "Output file name: "${output_file_name}
+    echo "Extra options: "${extra_options}
 
     date
-    time ProcessNTuples ${input_file_name} ${input_file_type} ${selections} ${output_file_name}
+    time ProcessNTuples ${input_file_name} ${input_file_type} ${selections} ${output_file_name} ${extra_options}
     date
     counter=$((counter + 1))
 done

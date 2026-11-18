@@ -12,14 +12,17 @@
 // map. By default only events that are selected, or that are true signal (MC),
 // for at least one requested selection are written; use --keep-all to write
 // every processed event. --no-syst-weights omits the systematic weight
-// branches (weight_<name>), keeping only the CV weight; combined with
-// --keep-all this gives a compact all-events file for selection studies.
+// branches (weight_<name>), keeping only the CV weights (the scalar
+// weightSplineTimesTune and the spline, tune and PPFX CV weight branches).
+// This is what the detector-variation samples need, and combined with
+// --keep-all it gives a compact all-events file for selection studies.
 
 // Standard library includes
 #include <cmath>
 #include <iostream>
 #include <map>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -37,6 +40,7 @@
 #include "XSecAnalyzer/Functions.hh"
 #include "XSecAnalyzer/FiducialVolume.hh"
 #include "XSecAnalyzer/NtupleFormat.hh"
+#include "XSecAnalyzer/UniverseMaker.hh"
 
 #include "XSecAnalyzer/Selections/SelectionBase.hh"
 #include "XSecAnalyzer/Selections/SelectionFactory.hh"
@@ -50,7 +54,8 @@ namespace {
     public:
 
       WeightsTreeWriter( TDirectory* dir, TTree* pelee_tree, bool is_mc,
-        bool syst_weights = true ) : is_mc_( is_mc )
+        bool syst_weights = true ) : is_mc_( is_mc ),
+        syst_weights_( syst_weights )
       {
         dir->cd();
         tree_ = new TTree( "weights", "Event weights and IDs (aligned with"
@@ -80,8 +85,9 @@ namespace {
         }
 
         // Systematic weight map. The output branches are created on the
-        // first event, once the keys are known.
-        if ( syst_weights && pelee_->GetBranch( "weights" ) ) {
+        // first event, once the keys are known. Without the systematic
+        // weights, only the CV weights are copied from it.
+        if ( pelee_->GetBranch( "weights" ) ) {
           pelee_->SetBranchAddress( "weights", &in_map_ );
           has_map_ = true;
         }
@@ -115,8 +121,14 @@ namespace {
     protected:
 
       void make_branches() {
+        // Map keys of the CV weights (the branch names without "weight_")
+        static const size_t prefix = std::string( "weight_" ).size();
+        static const std::set< std::string > cv_keys = {
+          SPLINE_WEIGHT_NAME.substr( prefix ), TUNE_WEIGHT_NAME.substr( prefix ),
+          PPFX_WEIGHT_NAME.substr( prefix ) };
         for ( const auto& pair : *in_map_ ) {
           const std::string& key = pair.first;
+          if ( !syst_weights_ && !cv_keys.count( key ) ) continue;
           auto& vec_ptr = out_vecs_[ key ];
           vec_ptr = std::make_unique< std::vector< double > >();
           sizes_[ key ] = pair.second.size();
@@ -124,14 +136,16 @@ namespace {
           tree_->Branch( br_name.c_str(), vec_ptr.get() );
         }
         branches_made_ = true;
-        std::cout << "Writing " << out_vecs_.size() << " systematic weight"
-          << " branches to " << WEIGHTS_TREE_NAME << '\n';
+        std::cout << "Writing " << out_vecs_.size() << ( syst_weights_
+          ? " systematic" : " CV" ) << " weight branches to "
+          << WEIGHTS_TREE_NAME << '\n';
       }
 
       TTree* tree_ = nullptr;
       TTree* pelee_ = nullptr;
 
       bool is_mc_ = false;
+      bool syst_weights_ = true;
       int run_ = 0, subrun_ = 0, event_ = 0;
       long long entry_ = 0;
       float cv_weight_ = 1.f;
@@ -170,8 +184,9 @@ int main( int argc, char* argv[] ) {
       << " [--keep-all] [--no-syst-weights]\n"
       << "  By default only events that are selected, or true signal (MC),"
       << " for at least one\n  selection are written. --keep-all writes every"
-      << " processed event.\n  --no-syst-weights keeps only the CV weight"
-      << " (no weight_<name> branches).\n";
+      << " processed event.\n  --no-syst-weights keeps only the CV weights"
+      << " (weightSplineTimesTune and the\n  spline, tune and PPFX CV weight"
+      << " branches), e.g. for detector-variation samples.\n";
     return 1;
   }
 
@@ -193,7 +208,7 @@ int main( int argc, char* argv[] ) {
   std::cout << "\toutput_file_name: " << output_file_name << '\n';
   std::cout << "\tkeep: " << ( keep_all ? "all events"
     : "selected or true-signal events only" ) << '\n';
-  std::cout << "\tsystematic weights: " << ( syst_weights ? "yes" : "no (CV only)" )
+  std::cout << "\tsystematic weights: " << ( syst_weights ? "yes" : "no (CV weights only)" )
     << '\n';
   std::cout << "\n\nselection names:\n";
   for ( const auto& sel_name : selection_names ) {
