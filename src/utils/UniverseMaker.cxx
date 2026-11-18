@@ -25,6 +25,7 @@ void UniverseMaker::init( std::istream& in_file ) {
 
   // Initialize the owned input TChain with the configured TTree name
   input_chain_.SetName( ttree_name.c_str() );
+  weights_chain_.SetName( WEIGHTS_TREE_NAME.c_str() );
 
   // Load the name of the selection whose event category definitions
   // will be used for populating the category histogram
@@ -88,9 +89,27 @@ void UniverseMaker::add_input_file( const std::string& input_file_name )
   if ( !temp_tree ) throw std::runtime_error( "Missing ntuple TTree "
     + tree_name + " in the input ntuple file " + input_file_name );
 
+  // Slim-format files (see NtupleFormat.hh) keep the event weights and the
+  // is_mc flag in a separate, entry-aligned TTree. Mixing slim and legacy
+  // files in the same UniverseMaker is not supported.
+  TTree* weights_tree = nullptr;
+  temp_file.GetObject( WEIGHTS_TREE_NAME.c_str(), weights_tree );
+  bool slim = ( weights_tree != nullptr );
+  int num_files = input_chain_.GetListOfFiles()->GetEntries();
+  if ( num_files > 0 && slim != use_weights_chain_ ) {
+    throw std::runtime_error( "Cannot mix slim-format and legacy ntuple files"
+      " in the same UniverseMaker (" + input_file_name + ")" );
+  }
+  use_weights_chain_ = slim;
+  if ( slim && weights_tree->GetEntries() != temp_tree->GetEntries() ) {
+    throw std::runtime_error( "Entry mismatch between " + tree_name + " and "
+      + WEIGHTS_TREE_NAME + " in " + input_file_name );
+  }
+
   // If we've made it here, then the input file has passed all of the checks.
-  // Add it to the input TChain.
+  // Add it to the input TChain(s).
   input_chain_.AddFile( input_file_name.c_str() );
+  if ( slim ) weights_chain_.AddFile( input_file_name.c_str() );
 }
 
 void UniverseMaker::prepare_formulas() {
@@ -126,7 +145,14 @@ void UniverseMaker::prepare_formulas() {
     reco_bin_formulas_.emplace_back( std::move(rbf) );
   }
 
-  // Create one TTreeFormula for each true event category
+  // Create one TTreeFormula for each true event category. Current selections
+  // store the category as <sel>_Category; older stv_tree files used
+  // <sel>_EventCategory.
+  std::string category_branch = sel_for_categories_->name() + "_Category";
+  input_chain_.LoadTree( 0 );
+  if ( !input_chain_.GetBranch( category_branch.c_str() ) ) {
+    category_branch = sel_for_categories_->name() + "_EventCategory";
+  }
   const auto& category_map = sel_for_categories_->category_map();
   Universe::set_num_categories( category_map.size() );
   for ( const auto& category_pair : category_map ) {
@@ -136,8 +162,7 @@ void UniverseMaker::prepare_formulas() {
 
     std::string category_formula_name = "category_formula_" + str_category;
 
-    std::string category_cuts = sel_for_categories_->name()
-      + "_EventCategory == " + str_category;
+    std::string category_cuts = category_branch + " == " + str_category;
 
     auto cbf = std::make_unique< TTreeFormula >(
       category_formula_name.c_str(), category_cuts.c_str(), &input_chain_ );
@@ -165,36 +190,42 @@ void UniverseMaker::build_universes(
     return;
   }
 
+  // Event weights and is_mc are read from the weights TTree for slim-format
+  // files, or from the main TTree for legacy files
+  TChain& wsrc = this->weight_source();
+  wsrc.LoadTree( 0 );
+
   WeightHandler wh;
-  wh.set_branch_addresses( input_chain_, universe_branch_names );
+  wh.set_branch_addresses( wsrc, universe_branch_names );
 
   // Make sure that we always have branches set up for the CV correction
   // weights, i.e., the spline and tune weights. Don't throw an exception if
   // these are missing in the input TTree (we could be working with real data)
-  wh.add_branch( input_chain_, SPLINE_WEIGHT_NAME, false );
-  wh.add_branch( input_chain_, TUNE_WEIGHT_NAME, false );
-  if (useNuMI) wh.add_branch( input_chain_, PPFX_WEIGHT_NAME, false );
+  wh.add_branch( wsrc, SPLINE_WEIGHT_NAME, false );
+  wh.add_branch( wsrc, TUNE_WEIGHT_NAME, false );
+  if (useNuMI) wh.add_branch( wsrc, PPFX_WEIGHT_NAME, false );
 
   this->prepare_formulas();
 
   // Set up storage for the "is_mc" boolean flag branch. If we're not working
   // with MC events, then we shouldn't do anything with the true bin counts.
   bool is_mc;
-  input_chain_.SetBranchAddress( "is_mc", &is_mc );
+  wsrc.SetBranchAddress( "is_mc", &is_mc );
 
   // set CV weight addresses, NuMI-specific
   float tune_weight_numi = 1;
   float ppfx_weight_numi = 1;
   float normalisation_weight_numi = 1;
   if (useNuMI) {
-    input_chain_.SetBranchAddress( "tuned_cv_weight", &tune_weight_numi );
-    input_chain_.SetBranchAddress( "ppfx_cv_weight", &ppfx_weight_numi );
-    input_chain_.SetBranchAddress( "normalisation_weight", &normalisation_weight_numi );
+    wsrc.SetBranchAddress( "tuned_cv_weight", &tune_weight_numi );
+    wsrc.SetBranchAddress( "ppfx_cv_weight", &ppfx_weight_numi );
+    wsrc.SetBranchAddress( "normalisation_weight", &normalisation_weight_numi );
   }
 
   // Get the first TChain entry so that we can know the number of universes
   // used in each vector of weights
   input_chain_.GetEntry( 0 );
+  if ( use_weights_chain_ ) weights_chain_.GetEntry( 0 );
 
   // Now prepare the vectors of Universe objects with the correct sizes
   this->prepare_universes( wh );
@@ -238,6 +269,7 @@ void UniverseMaker::build_universes(
     }
 
     input_chain_.GetEntry( entry );
+    if ( use_weights_chain_ ) weights_chain_.GetEntry( entry );
 
     std::vector< FormulaMatch > matched_true_bins;
     double spline_weight = 0.;
@@ -370,6 +402,7 @@ void UniverseMaker::build_universes(
   } // TChain entries
 
   input_chain_.ResetBranchAddresses();
+  if ( use_weights_chain_ ) weights_chain_.ResetBranchAddresses();
 }
 
 void UniverseMaker::prepare_universes( const WeightHandler& wh ) {

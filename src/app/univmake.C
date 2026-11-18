@@ -13,6 +13,7 @@
 // XSecAnalyzer includes
 #include "XSecAnalyzer/FilePropertiesManager.hh"
 #include "XSecAnalyzer/MCC9SystematicsCalculator.hh"
+#include "XSecAnalyzer/NtupleFormat.hh"
 #include "XSecAnalyzer/UniverseMaker.hh"
 
 // Helper function that checks whether a given ROOT file represents an ntuple
@@ -23,13 +24,14 @@
 // samples prepared using alternative generators (e.g., NuWro) are not expected
 // to have this branch.
 bool is_reweightable_mc_ntuple( const std::string& input_file_name ) {
+  // Works for both the slim format (weights in XSecAnalyzer/weights) and the
+  // legacy stv_tree format (see XSecAnalyzer/NtupleFormat.hh)
   TFile temp_file( input_file_name.c_str(), "read" );
-  TTree* stv_tree = nullptr;
-  temp_file.GetObject( "stv_tree", stv_tree );
-  if ( !stv_tree ) throw std::runtime_error( "Missing TTree \"stv_tree\" in"
+  TTree* weights_tree = get_weights_tree( temp_file );
+  if ( !weights_tree ) throw std::runtime_error( "Missing TTree "
+    + WEIGHTS_TREE_NAME + " (or legacy " + LEGACY_TREE_NAME + ") in"
     " the input ROOT file " + input_file_name );
-
-  TBranch* cv_weight_br = stv_tree->GetBranch( TUNE_WEIGHT_NAME.c_str() );
+  TBranch* cv_weight_br = weights_tree->GetBranch( TUNE_WEIGHT_NAME.c_str() );
   bool has_cv_weights = ( cv_weight_br != nullptr );
   return has_cv_weights;
 }

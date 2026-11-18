@@ -1,5 +1,6 @@
 // XSecAnalyzer includes
 #include "XSecAnalyzer/SystematicsCalculator.hh"
+#include "XSecAnalyzer/NtupleFormat.hh"
 
 void set_stats_and_dir( Universe& univ ) {
   univ.hist_reco_->SetStats( false );
@@ -464,11 +465,9 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
           // TODO: use the TDirectoryFile to handle this rather than
           // pulling it out of the original ntuple file
           TFile temp_mc_file( file_name.c_str(), "read" );
-          TParameter<float>* temp_pot = nullptr;
-          temp_mc_file.GetObject( "summed_pot", temp_pot );
-          if ( !temp_pot ) throw std::runtime_error(
-            "Missing POT in MC file!" );
-          file_pot = temp_pot->GetVal();
+          file_pot = get_summed_pot( temp_mc_file );
+          if ( file_pot < 0. ) throw std::runtime_error(
+            "Missing POT in MC file " + file_name );
         }
         else {
           // We can ask the FilePropertiesManager for the data POT values

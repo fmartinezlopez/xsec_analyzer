@@ -19,6 +19,7 @@
 #include "TTreeFormula.h"
 
 // XSecAnalyzer includes
+#include "XSecAnalyzer/NtupleFormat.hh"
 #include "XSecAnalyzer/WeightHandler.hh"
 
 #include "Selections/SelectionBase.hh"
@@ -445,6 +446,19 @@ class UniverseMaker {
     // A TChain containing MC event ntuples that will be used to compute the
     // universe histograms
     TChain input_chain_;
+
+    // For post-processed files in the slim format (see NtupleFormat.hh), the
+    // event weights and the is_mc flag live in a separate TTree
+    // (XSecAnalyzer/weights) that is aligned entry by entry with the
+    // selection TTree. This TChain holds it. For legacy stv_tree files it is
+    // unused and everything is read from input_chain_.
+    TChain weights_chain_;
+    bool use_weights_chain_ = false;
+
+    // Returns the TChain holding the event weights and is_mc
+    inline TChain& weight_source() {
+      return use_weights_chain_ ? weights_chain_ : input_chain_;
+    }
 
     // TTreeFormula objects used to test whether the current TChain entry falls
     // into each true bin
