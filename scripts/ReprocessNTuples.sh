@@ -44,10 +44,16 @@ do
     input_file_name=$( echo $file | awk '{print $1}' )
     input_file_type=$( echo $file | awk '{print $2}' )
     output_file_name="${output_dir}/xsec-ana-$(basename ${input_file_name})"
-    # Detector-variation samples only need the CV weight (their universes are
-    # never reweighted), so skip the systematic weight branches for them
+    # Detector-variation samples only need the CV weights (their universes
+    # are never reweighted), so skip the systematic weight branches for them.
+    #   DV:   detector-variation file; its TTrees carry a "_det" suffix (the
+    #         files also hold "_cv" copies, which are not used: the CV comes
+    #         from the separate detVar CV files)
+    #   CVDV: detector-variation CV file (TTrees without a suffix)
     extra_options=""
     if [ "${input_file_type}" = "DV" ]; then
+      extra_options="--no-syst-weights --tree-suffix _det"
+    elif [ "${input_file_type}" = "CVDV" ]; then
       extra_options="--no-syst-weights"
     fi
     echo "Starting file:"${counter}"/"${total_files}

@@ -16,6 +16,12 @@
 // weightSplineTimesTune and the spline, tune and PPFX CV weight branches).
 // This is what the detector-variation samples need, and combined with
 // --keep-all it gives a compact all-events file for selection studies.
+// --tree-suffix SUFFIX reads every input TTree under a suffixed name, for
+// files that carry several copies of each TTree (e.g. the detector-variation
+// samples with both "_cv" and "_det" copies): with "_det", the TTree
+// "nuselection/NeutrinoSelectionFilter" is read from
+// "nuselection/NeutrinoSelectionFilter_det". The selections keep using the
+// usual names.
 
 // Standard library includes
 #include <cmath>
@@ -163,6 +169,21 @@ namespace {
       std::map< std::string, size_t > sizes_;
   };
 
+  // Retrieve an input TTree, optionally under a suffixed name (see
+  // --tree-suffix above). Returns nullptr if it is not found.
+  TTree* get_input_tree( TFile& file, const std::string& name,
+    const std::string& suffix )
+  {
+    std::string file_name = name + suffix;
+    TTree* tree = nullptr;
+    file.GetObject( file_name.c_str(), tree );
+    if ( tree && !suffix.empty() ) {
+      std::cout << "Reading TTree \"" << name << "\" from \"" << file_name
+        << "\"\n";
+    }
+    return tree;
+  }
+
 }
 
 int main( int argc, char* argv[] ) {
@@ -170,23 +191,31 @@ int main( int argc, char* argv[] ) {
   // Parse the optional flags (may appear anywhere)
   bool keep_all = false;
   bool syst_weights = true;
+  std::string tree_suffix;
+  bool bad_flag = false;
   std::vector< std::string > args;
   for ( int a = 1; a < argc; ++a ) {
     std::string arg( argv[ a ] );
     if ( arg == "--keep-all" ) keep_all = true;
     else if ( arg == "--no-syst-weights" ) syst_weights = false;
+    else if ( arg == "--tree-suffix" ) {
+      if ( a + 1 < argc ) tree_suffix = argv[ ++a ];
+      else bad_flag = true;
+    }
     else args.push_back( arg );
   }
 
-  if ( args.size() != 4u ) {
+  if ( args.size() != 4u || bad_flag ) {
     std::cout << "Usage: " << argv[0]
       << " INPUT_NTUPLE_FILE FILE_TYPE SELECTION_NAMES OUTPUT_FILE"
-      << " [--keep-all] [--no-syst-weights]\n"
+      << " [--keep-all] [--no-syst-weights] [--tree-suffix SUFFIX]\n"
       << "  By default only events that are selected, or true signal (MC),"
       << " for at least one\n  selection are written. --keep-all writes every"
       << " processed event.\n  --no-syst-weights keeps only the CV weights"
       << " (weightSplineTimesTune and the\n  spline, tune and PPFX CV weight"
-      << " branches), e.g. for detector-variation samples.\n";
+      << " branches), e.g. for detector-variation samples.\n"
+      << "  --tree-suffix SUFFIX reads each input TTree as <dir>/<tree>SUFFIX,"
+      << " e.g. _det for\n  the variation copy in detector-variation files.\n";
     return 1;
   }
 
@@ -210,6 +239,8 @@ int main( int argc, char* argv[] ) {
     : "selected or true-signal events only" ) << '\n';
   std::cout << "\tsystematic weights: " << ( syst_weights ? "yes" : "no (CV weights only)" )
     << '\n';
+  std::cout << "\tinput TTree suffix: " << ( tree_suffix.empty()
+    ? std::string( "none" ) : tree_suffix ) << '\n';
   std::cout << "\n\nselection names:\n";
   for ( const auto& sel_name : selection_names ) {
     std::cout << "\t\t- " << sel_name << '\n';
@@ -235,8 +266,14 @@ int main( int argc, char* argv[] ) {
 
   // Get the PeLEE TTree containing subrun POT information. Note that real data
   // does not have this TTree, so just skip summing the POT if it is missing.
-  TTree* subruns_tree = nullptr;
-  in_file.GetObject( "nuselection/SubRun", subruns_tree );
+  TTree* subruns_tree = get_input_tree( in_file, "nuselection/SubRun",
+    tree_suffix );
+  // A single, unsuffixed SubRun TTree is fine too (same POT for all copies)
+  if ( !subruns_tree && !tree_suffix.empty() ) {
+    in_file.GetObject( "nuselection/SubRun", subruns_tree );
+    if ( subruns_tree ) std::cout << "Reading TTree \"nuselection/SubRun\""
+      " without the suffix\n";
+  }
 
   // Get the total POT from the subruns TTree
   float summed_pot = 0.;
@@ -289,11 +326,12 @@ int main( int argc, char* argv[] ) {
     // Load all input TTrees required by the current selection object
     const auto& in_tree_names = sel->input_tree_names();
     for ( const auto& tn : in_tree_names ) {
-      TTree* temp_tree = nullptr;
-      in_file.GetObject( tn.c_str(), temp_tree );
+      TTree* temp_tree = get_input_tree( in_file, tn, tree_suffix );
 
       if ( !temp_tree ) throw std::runtime_error( "Could not load TTree \""
-        + tn + "\" from the file " + input_file_name + " (this TTree"
+        + tn + "\"" + ( tree_suffix.empty() ? std::string()
+        : " (with the suffix " + tree_suffix + ")" ) + " from the file "
+        + input_file_name + " (this TTree"
         + " is required to apply the \"" + sel_name + "\" selection)" );
 
       th.add_input_tree( temp_tree, tn );
@@ -302,8 +340,8 @@ int main( int argc, char* argv[] ) {
 
   // Event weights and IDs are taken from the PeLEE TTree if it is present
   const std::string PELEE_TREE_NAME = "nuselection/NeutrinoSelectionFilter";
-  TTree* pelee_tree = nullptr;
-  in_file.GetObject( PELEE_TREE_NAME.c_str(), pelee_tree );
+  TTree* pelee_tree = get_input_tree( in_file, PELEE_TREE_NAME,
+    tree_suffix );
   WeightsTreeWriter weights_writer( sub_dir, pelee_tree, is_mc,
     syst_weights );
 
