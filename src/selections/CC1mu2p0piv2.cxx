@@ -1,3 +1,6 @@
+// Standard library includes
+#include <cmath>
+
 // XSecAnalyzer includes
 #include "XSecAnalyzer/Constants.hh"
 #include "XSecAnalyzer/Functions.hh"
@@ -41,15 +44,19 @@ namespace {
 
 }
 
-CC1mu2p0piv2::CC1mu2p0piv2() : SelectionBase( "CC1mu2p0piv2" ) {
+CC1mu2p0piv2::CC1mu2p0piv2( const std::string& sel_name )
+  : SelectionBase( sel_name )
+{
   ki_calc_type_ = KICalculator::kOpt1;
   this->define_fv( 21.5, 234.85, -95.0, 95.0, 21.5, 966.8 );
 }
 
 bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
 
-  // Get access to the input PeLEE ntuple branches
-  const auto& in = ev.in();
+  // Get access to the input PeLEE ntuple branches. The tree is requested by
+  // name because derived selections add other input trees (ev.in() without
+  // a name returns the first one in alphabetical order).
+  const auto& in = ev.in( "nuselection/NeutrinoSelectionFilter" );
 
   // Get access to the output TTree branches
   auto& out = ev.out();
@@ -457,8 +464,8 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
   out[ "cosmic_ip" ] = static_cast< double >( cosmic_ip );
 
   // Per-candidate quantities for the muon, leading and subleading proton
-  // candidates (before any NC sideband index reassignment below). These
-  // allow PID, attachment and truth-matching studies to be done offline.
+  // candidates. These allow PID, attachment and truth-matching studies to be
+  // done offline.
   std::vector< float > *track_pid_chipr, *track_bragg_p, *track_bragg_mu;
   std::vector< unsigned int > *pfp_trk_daughters, *pfp_shr_daughters;
   in.at( "trk_pid_chipr_v" ) >> track_pid_chipr;
@@ -570,46 +577,11 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
     && sel_protons_passed_mom_cuts
     && sel_protons_near_vertex && sel_protons_no_descendents;
 
-  // Store the muon and proton candidate indices in the output tree. We do
-  // this here with the actual values (which may be BOGUS_INDEX if such a
-  // candidate was not found) because we will replace them with other values
-  // below if needed to allow studies of an NC-enriched sideband.
+  // Store the muon and proton candidate indices in the output tree (they may
+  // be BOGUS_INDEX if such a candidate was not found)
   out[ "muon_candidate_idx" ] = muon_candidate_idx;
   out[ "lead_p_candidate_idx" ] = lead_p_candidate_idx;
   out[ "sub_p_candidate_idx" ] = sub_p_candidate_idx;
-
-  // In cases where we failed to find a muon candidate, check whether there are
-  // at least three generation == 2 PFParticles. If there are, then compute the
-  // usual observables using the longest track as the muon candidate and the
-  // next two longest tracks as the leading and subleading proton candidates.
-  // This will enable sideband studies of NC backgrounds in the CC1mu2p0pi
-  // phase space.
-  if ( !sel_has_muon_candidate ) {
-
-    std::vector< std::pair< float, int > > trk_len_idx_vec;
-
-    for ( int p = 0; p < num_pfps; ++p ) {
-
-      // Only include direct neutrino daughters (generation == 2)
-      unsigned int generation = gen_vec->at( p );
-      if ( generation != 2u ) continue;
-
-      trk_len_idx_vec.emplace_back( track_length->at( p ), p );
-    }
-
-    // Sort the tracks in order from longest to shortest
-    std::sort( trk_len_idx_vec.begin(), trk_len_idx_vec.end(),
-      [](const std::pair< float, int >& a, const std::pair< float, int >& b)
-      -> bool { return a.first > b.first; } );
-
-    // If we found at least three usable PFParticles, then assign the indices
-    // to be used below
-    if ( trk_len_idx_vec.size() >= 3u ) {
-      muon_candidate_idx = trk_len_idx_vec.at( 0 ).second;
-      lead_p_candidate_idx = trk_len_idx_vec.at( 1 ).second;
-      sub_p_candidate_idx = trk_len_idx_vec.at( 2 ).second;
-    }
-  }
 
   std::vector< float > *track_dir_x, *track_dir_y, *track_dir_z;
   in.at( "trk_dir_x_v" ) >> track_dir_x;
@@ -738,6 +710,81 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
     sub_p_start_dist = track_start_distance->at( sub_p_candidate_idx );
   }
 
+  // We're done, store the results in the output tree and return
+  // the boolean flag indicating whether the full selection was passed or not
+  out[ "reco_vertex_in_FV" ] = sel_reco_vertex_in_FV;
+  out[ "pfp_starts_in_PCV" ] = sel_pfp_starts_in_PCV;
+  out[ "has_muon_candidate" ] = sel_has_muon_candidate;
+  out[ "topo_cut_passed" ] = sel_topo_cut_passed;
+  out[ "nu_mu_cc" ] = sel_nu_mu_cc;
+  out[ "muon_contained" ] = sel_muon_contained;
+  out[ "muon_passed_mom_cuts" ] = sel_muon_passed_mom_cuts;
+  out[ "no_reco_showers" ] = sel_no_reco_showers;
+  out[ "has_p_candidate" ] = sel_has_p_candidate;
+  out[ "two_p_candidates" ] = sel_two_p_candidates;
+  out[ "no_extra_pfps" ] = sel_no_extra_pfps;
+  out[ "muon_quality_ok" ] = sel_muon_quality_ok;
+  out[ "protons_contained" ] = sel_protons_contained;
+  out[ "passed_proton_pid_cut" ] = sel_passed_proton_pid_cut;
+  out[ "protons_passed_mom_cuts" ] = sel_protons_passed_mom_cuts;
+  out[ "cosmic_ip_cut_passed" ] = sel_cosmic_ip_cut_passed;
+
+  out[ "num_gen2_pfps" ] = num_gen2_pfps;
+  out[ "num_p_candidates" ] = static_cast< int >( num_p_candidates );
+
+  out[ "reco_p_mu_range" ] = p_mu_range;
+  out[ "reco_p_mu_mcs" ] = p_mu_mcs;
+  out[ "reco_mu_frac_diff_range_mcs" ] = frac_diff_range_mcs;
+
+  out[ "reco_lead_p_start_dist" ] = lead_p_start_dist;
+  out[ "reco_sub_p_start_dist" ] = sub_p_start_dist;
+
+  fill_observables( out, muon && lead_p && sub_p, p3mu, p3_lead_p, p3_sub_p );
+  out[ "reco_p3_p_vec" ] = p3_p_vec;
+
+  // Keep the Pandora results for derived selections
+  float raw_vx;
+  in.at( "reco_nu_vtx_x" ) >> raw_vx;
+  pd_ = PandoraResult();
+  pd_.selected = sel_CC2p0pi;
+  pd_.nu_mu_cc = sel_nu_mu_cc;
+  pd_.reco_vertex_in_FV = sel_reco_vertex_in_FV;
+  pd_.has_vertex = std::isfinite( nu_vx ) && std::isfinite( nu_vy )
+    && std::isfinite( nu_vz ) && nu_vx > -900. && raw_vx > -900.;
+  pd_.has_muon_candidate = sel_has_muon_candidate;
+  pd_.muon_contained = sel_muon_contained;
+  pd_.muon_passed_mom_cuts = sel_muon_passed_mom_cuts;
+  pd_.muon_quality_if_contained = sel_muon_quality_if_contained;
+  pd_.muon_ng2_mip = sel_muon_ng2_mip;
+  pd_.no_reco_showers = sel_no_reco_showers;
+  pd_.two_p_candidates = sel_two_p_candidates;
+  pd_.no_extra_pfps = sel_no_extra_pfps;
+  pd_.protons_contained = sel_protons_contained;
+  pd_.protons_near_vertex = sel_protons_near_vertex;
+  pd_.protons_no_descendents = sel_protons_no_descendents;
+  if ( ng2_ok( lead_p_candidate_idx ) ) {
+    pd_.lead_p_ng2_hipfrac = ng2_hipfrac->at( lead_p_candidate_idx );
+  }
+  if ( ng2_ok( sub_p_candidate_idx ) ) {
+    pd_.sub_p_ng2_hipfrac = ng2_hipfrac->at( sub_p_candidate_idx );
+  }
+  pd_.p_mu_range = p_mu_range;
+  pd_.p_mu_mcs = p_mu_mcs;
+  pd_.has_p3 = muon && lead_p && sub_p;
+  pd_.has_lead_p = lead_p;
+  pd_.has_sub_p = sub_p;
+  pd_.p3mu = p3mu;
+  pd_.p3_lead_p = p3_lead_p;
+  pd_.p3_sub_p = p3_sub_p;
+  if ( pd_.has_p3 ) pd_.cos_gamma_pp = std::cos( p3_lead_p.Angle( p3_sub_p ) );
+
+  return sel_CC2p0pi;
+}
+
+void CC1mu2p0piv2::fill_observables( TreeMap::Wrapper& out, bool ok,
+  const TVector3& p3mu, const TVector3& p3_lead_p, const TVector3& p3_sub_p )
+  const
+{
   // Compute reco observables if we have a muon candidate and both a leading
   // and a subleading proton candidate in the event
 
@@ -767,7 +814,7 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
     cos_theta_lead_q = BOGUS, cos_theta_sub_q = BOGUS,
     cos_theta_pp_q = BOGUS;
 
-  if ( muon && lead_p && sub_p ) {
+  if ( ok ) {
 
     double E_mu = real_sqrt( p3mu.Mag2() + MUON_MASS*MUON_MASS );
     double E_lead_p = real_sqrt( p3_lead_p.Mag2() + PROTON_MASS*PROTON_MASS );
@@ -865,35 +912,6 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
     cos_theta_pp_q = std::cos( p3_pp.Angle( q3_vec ) );
   }
 
-  // We're done, store the results in the output tree and return
-  // the boolean flag indicating whether the full selection was passed or not
-  out[ "reco_vertex_in_FV" ] = sel_reco_vertex_in_FV;
-  out[ "pfp_starts_in_PCV" ] = sel_pfp_starts_in_PCV;
-  out[ "has_muon_candidate" ] = sel_has_muon_candidate;
-  out[ "topo_cut_passed" ] = sel_topo_cut_passed;
-  out[ "nu_mu_cc" ] = sel_nu_mu_cc;
-  out[ "muon_contained" ] = sel_muon_contained;
-  out[ "muon_passed_mom_cuts" ] = sel_muon_passed_mom_cuts;
-  out[ "no_reco_showers" ] = sel_no_reco_showers;
-  out[ "has_p_candidate" ] = sel_has_p_candidate;
-  out[ "two_p_candidates" ] = sel_two_p_candidates;
-  out[ "no_extra_pfps" ] = sel_no_extra_pfps;
-  out[ "muon_quality_ok" ] = sel_muon_quality_ok;
-  out[ "protons_contained" ] = sel_protons_contained;
-  out[ "passed_proton_pid_cut" ] = sel_passed_proton_pid_cut;
-  out[ "protons_passed_mom_cuts" ] = sel_protons_passed_mom_cuts;
-  out[ "cosmic_ip_cut_passed" ] = sel_cosmic_ip_cut_passed;
-
-  out[ "num_gen2_pfps" ] = num_gen2_pfps;
-  out[ "num_p_candidates" ] = static_cast< int >( num_p_candidates );
-
-  out[ "reco_p_mu_range" ] = p_mu_range;
-  out[ "reco_p_mu_mcs" ] = p_mu_mcs;
-  out[ "reco_mu_frac_diff_range_mcs" ] = frac_diff_range_mcs;
-
-  out[ "reco_lead_p_start_dist" ] = lead_p_start_dist;
-  out[ "reco_sub_p_start_dist" ] = sub_p_start_dist;
-
   out[ "reco_p_mu" ] = p_mu;
   out[ "reco_cos_theta_mu" ] = cos_theta_mu;
   out[ "reco_p_lead_p" ] = p_lead_p;
@@ -944,15 +962,12 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
   out[ "reco_p3_mu" ] = p3mu;
   out[ "reco_p3_lead_p" ] = p3_lead_p;
   out[ "reco_p3_sub_p" ] = p3_sub_p;
-  out[ "reco_p3_p_vec" ] = p3_p_vec;
-
-  return sel_CC2p0pi;
 }
 
 std::string CC1mu2p0piv2::categorize_event( AnalysisEvent& ev ) {
 
   // Get access to the input and output trees
-  const auto& in = ev.in();
+  const auto& in = ev.in( "nuselection/NeutrinoSelectionFilter" );
   auto& out = ev.out();
 
   // Retrieve some truth information from the PeLEE ntuple
