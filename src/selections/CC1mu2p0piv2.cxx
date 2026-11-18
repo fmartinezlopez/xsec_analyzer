@@ -7,10 +7,37 @@
 namespace {
   constexpr double MUON_P_MIN = 0.10; // GeV/c
 
-  constexpr double PROTON_P_MIN = 0.25; // GeV/c
+  // Proton momentum window, used both in the signal definition and in the
+  // reco selection. NOTE: The proton multiplicity analysis (CC1muNp0pi) uses
+  // 0.25 GeV/c. The default here was raised to 0.30 GeV/c, which roughly
+  // halves the CC0pi >= 3p background (missed third proton just above
+  // threshold). Set this back to 0.25 to recover the exact correspondence
+  // with the multiplicity 2p bin.
+  constexpr double PROTON_P_MIN = 0.30; // GeV/c
   constexpr double PROTON_P_MAX = 1.00; // GeV/c
 
   constexpr double PI_PLUS_P_MIN = 0.00; // GeV/c
+
+  // Proton candidate attachment to the reco neutrino vertex: the start of the
+  // closer proton candidate must lie within PROTON_VTX_DIST_NEAR of the
+  // vertex, and the start of the farther one within PROTON_VTX_DIST_FAR.
+  // (The 2022 requirement of 4 cm for both loses collinear pairs.)
+  constexpr double PROTON_VTX_DIST_NEAR = 4.; // cm
+  constexpr double PROTON_VTX_DIST_FAR = 8.; // cm
+
+  // NuGraph2 particle ID, which replaces the LLR proton PID cut
+  // (DEFAULT_PROTON_PID_CUT is still evaluated and stored, but not applied).
+  // Both proton candidates must have at least this fraction of their hits
+  // labelled HIP by NuGraph2. Unlike the LLR score, this works for short
+  // (< 5 cm) tracks, which is where most subleading protons are.
+  constexpr double PROTON_NG2_HIP_FRAC_MIN = 0.6;
+  // The muon candidate must carry the NuGraph2 MIP semantic label
+  // (pfng2semlabel: 0 MIP, 1 HIP, 2 shower, 3 Michel, 4 diffuse)
+  constexpr int NG2_MIP_LABEL = 0;
+
+  // Proton candidates shorter than this use the vertex-to-track-end
+  // direction instead of the track-fit direction (see get_reco_p3_proton)
+  constexpr double PROTON_SHORT_TRACK_LENGTH = 12.; // cm
 
 }
 
@@ -320,15 +347,228 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
   bool sel_two_p_candidates = ( num_p_candidates == 2u );
   bool sel_no_extra_pfps = ( num_gen2_pfps == 3 );
 
+  // Additional requirements from the original CC1mu2p0pi selection. These
+  // are stored but not (yet) applied.
+
+  // No PFParticles other than the direct neutrino daughters
+  bool sel_no_daughter_pfps = ( num_pfps == num_gen2_pfps );
+
+  // Both proton candidates start or end near the reco vertex, and both
+  // pass the tighter track score cut
+  TVector3 x3_reco_vtx( nu_vx, nu_vy, nu_vz );
+  auto track_end_dist = [&]( int idx ) -> float {
+    TVector3 x3_end( track_end_x->at( idx ), track_end_y->at( idx ),
+      track_end_z->at( idx ) );
+    return ( x3_end - x3_reco_vtx ).Mag();
+  };
+
+  bool sel_protons_attached = true;
+  bool sel_protons_track_like = true;
+  for ( size_t c = 0u; c < num_p_candidates; ++c ) {
+    int p = p_candidate_indices.at( c );
+
+    float start_dist = track_start_distance->at( p );
+    float end_dist = track_end_dist( p );
+
+    if ( start_dist > MUON_VTX_DISTANCE_CUT
+      && end_dist > MUON_VTX_DISTANCE_CUT ) sel_protons_attached = false;
+
+    if ( track_score->at( p ) < MUON_TRACK_SCORE_CUT ) {
+      sel_protons_track_like = false;
+    }
+  }
+
+  out[ "no_daughter_pfps" ] = sel_no_daughter_pfps;
+  out[ "protons_attached" ] = sel_protons_attached;
+  out[ "protons_track_like" ] = sel_protons_track_like;
+  out[ "num_pfps" ] = num_pfps;
+
+  // Requirements of the current working point (applied below)
+  std::vector< unsigned int >* pfp_n_desc;
+  in.at( "pfp_n_descendents_v" ) >> pfp_n_desc;
+
+  // (1) Proton candidates attached to the vertex (see PROTON_VTX_DIST_*)
+  // (2) No proton candidate has descendant PFParticles (targets pions that
+  //     decay or interact, and protons that reinteract)
+  float p_start_dist_min = BOGUS, p_start_dist_max = BOGUS;
+  bool sel_protons_no_descendents = true;
+  for ( size_t c = 0u; c < num_p_candidates; ++c ) {
+    int p = p_candidate_indices.at( c );
+    float sd = track_start_distance->at( p );
+    if ( c == 0u || sd < p_start_dist_min ) p_start_dist_min = sd;
+    if ( c == 0u || sd > p_start_dist_max ) p_start_dist_max = sd;
+    if ( pfp_n_desc->at( p ) > 0u ) sel_protons_no_descendents = false;
+  }
+  bool sel_protons_near_vertex = ( num_p_candidates > 0u )
+    && ( p_start_dist_min < PROTON_VTX_DIST_NEAR )
+    && ( p_start_dist_max < PROTON_VTX_DIST_FAR );
+
+  // (3) Range/MCS momentum agreement for contained muon candidates. Exiting
+  // muons (MCS only) are not affected. Targets NC events in which a
+  // contained pion or proton is taken as the muon.
+  bool sel_muon_quality_if_contained = !sel_muon_contained
+    || sel_muon_quality_ok;
+
+  out[ "protons_near_vertex" ] = sel_protons_near_vertex;
+  out[ "protons_no_descendents" ] = sel_protons_no_descendents;
+  out[ "muon_quality_if_contained" ] = sel_muon_quality_if_contained;
+
+  // NuGraph2 particle ID (applied below). If the NuGraph2 per-PFP vectors
+  // are missing or shorter than expected (e.g., a sample without the NG2
+  // pass), the requirements fail.
+  std::vector< int >* ng2_semlabel;
+  std::vector< float > *ng2_hipfrac, *ng2_mipfrac, *ng2_mclfrac,
+    *ng2_bkgfrac;
+  in.at( "pfng2semlabel" ) >> ng2_semlabel;
+  in.at( "pfng2hipfrac" ) >> ng2_hipfrac;
+  in.at( "pfng2mipfrac" ) >> ng2_mipfrac;
+  in.at( "pfng2mclfrac" ) >> ng2_mclfrac;
+  in.at( "pfng2bkgfrac" ) >> ng2_bkgfrac;
+
+  auto ng2_ok = [&]( int idx ) -> bool {
+    if ( idx == BOGUS_INDEX ) return false;
+    size_t uidx = static_cast< size_t >( idx );
+    return ng2_semlabel && ng2_hipfrac && ng2_semlabel->size() > uidx
+      && ng2_hipfrac->size() > uidx;
+  };
+
+  // (4) Both proton candidates are HIP-like according to NuGraph2
+  bool sel_protons_ng2_hip = ( num_p_candidates > 0u );
+  for ( size_t c = 0u; c < num_p_candidates; ++c ) {
+    int p = p_candidate_indices.at( c );
+    if ( !ng2_ok( p ) || !( ng2_hipfrac->at( p ) >= PROTON_NG2_HIP_FRAC_MIN ) )
+    {
+      sel_protons_ng2_hip = false;
+    }
+  }
+
+  // (5) The muon candidate is MIP-like according to NuGraph2
+  bool sel_muon_ng2_mip = ng2_ok( muon_candidate_idx )
+    && ( ng2_semlabel->at( muon_candidate_idx ) == NG2_MIP_LABEL );
+
+  out[ "protons_ng2_hip" ] = sel_protons_ng2_hip;
+  out[ "muon_ng2_mip" ] = sel_muon_ng2_mip;
+
+  // Event-level quantities useful for offline cut studies
+  int nslice;
+  in.at( "nslice" ) >> nslice;
+  out[ "nslice" ] = nslice;
+  out[ "topological_score" ] = static_cast< double >( topological_score );
+  out[ "cosmic_ip" ] = static_cast< double >( cosmic_ip );
+
+  // Per-candidate quantities for the muon, leading and subleading proton
+  // candidates (before any NC sideband index reassignment below). These
+  // allow PID, attachment and truth-matching studies to be done offline.
+  std::vector< float > *track_pid_chipr, *track_bragg_p, *track_bragg_mu;
+  std::vector< unsigned int > *pfp_trk_daughters, *pfp_shr_daughters;
+  in.at( "trk_pid_chipr_v" ) >> track_pid_chipr;
+  in.at( "trk_bragg_p_v" ) >> track_bragg_p;
+  in.at( "trk_bragg_mu_v" ) >> track_bragg_mu;
+  in.at( "pfp_trk_daughters_v" ) >> pfp_trk_daughters;
+  in.at( "pfp_shr_daughters_v" ) >> pfp_shr_daughters;
+
+  // Backtracked truth information is MC-only. In data these branches may be
+  // present but empty, so the sizes are checked before use.
+  std::vector< int >* bt_pdg;
+  std::vector< float > *bt_purity, *bt_completeness, *bt_px, *bt_py, *bt_pz;
+  in.at( "backtracked_pdg" ) >> bt_pdg;
+  in.at( "backtracked_purity" ) >> bt_purity;
+  in.at( "backtracked_completeness" ) >> bt_completeness;
+  in.at( "backtracked_px" ) >> bt_px;
+  in.at( "backtracked_py" ) >> bt_py;
+  in.at( "backtracked_pz" ) >> bt_pz;
+
+  auto store_candidate = [&]( const std::string& prefix, int idx ) {
+    double llr = BOGUS, tscore = BOGUS, length = BOGUS, start_dist = BOGUS,
+      end_dist = BOGUS, chipr = BOGUS, bragg_p = BOGUS, bragg_mu = BOGUS,
+      bt_pur = BOGUS, bt_comp = BOGUS, bt_mom = BOGUS;
+    int n_desc = BOGUS_INDEX, n_trk_d = BOGUS_INDEX, n_shr_d = BOGUS_INDEX,
+      bt_code = 0;
+    bool contained = false;
+
+    if ( idx != BOGUS_INDEX ) {
+      llr = track_llr_pid_score->at( idx );
+      tscore = track_score->at( idx );
+      length = track_length->at( idx );
+      start_dist = track_start_distance->at( idx );
+      end_dist = track_end_dist( idx );
+      chipr = track_pid_chipr->at( idx );
+      bragg_p = track_bragg_p->at( idx );
+      bragg_mu = track_bragg_mu->at( idx );
+      n_desc = pfp_n_desc->at( idx );
+      n_trk_d = pfp_trk_daughters->at( idx );
+      n_shr_d = pfp_shr_daughters->at( idx );
+      contained = pcv.is_inside( track_end_x->at( idx ),
+        track_end_y->at( idx ), track_end_z->at( idx ) );
+
+      size_t uidx = static_cast< size_t >( idx );
+      if ( bt_pdg && bt_pdg->size() > uidx ) {
+        bt_code = bt_pdg->at( idx );
+        bt_pur = bt_purity->at( idx );
+        bt_comp = bt_completeness->at( idx );
+        bt_mom = TVector3( bt_px->at( idx ), bt_py->at( idx ),
+          bt_pz->at( idx ) ).Mag();
+      }
+    }
+
+    out[ prefix + "_llr_pid" ] = llr;
+    out[ prefix + "_trk_score" ] = tscore;
+    out[ prefix + "_length" ] = length;
+    out[ prefix + "_start_dist" ] = start_dist;
+    out[ prefix + "_end_dist" ] = end_dist;
+    out[ prefix + "_chi2_p" ] = chipr;
+    out[ prefix + "_bragg_p" ] = bragg_p;
+    out[ prefix + "_bragg_mu" ] = bragg_mu;
+    out[ prefix + "_n_descendents" ] = n_desc;
+    out[ prefix + "_n_trk_daughters" ] = n_trk_d;
+    out[ prefix + "_n_shr_daughters" ] = n_shr_d;
+    out[ prefix + "_contained" ] = contained;
+    out[ prefix + "_bt_pdg" ] = bt_code;
+    out[ prefix + "_bt_purity" ] = bt_pur;
+    out[ prefix + "_bt_completeness" ] = bt_comp;
+    out[ prefix + "_bt_p" ] = bt_mom;
+
+    // NuGraph2 per-PFP quantities
+    int ng2_label = BOGUS_INDEX;
+    double hipf = BOGUS, mipf = BOGUS, mclf = BOGUS, bkgf = BOGUS;
+    if ( ng2_ok( idx ) ) {
+      size_t uidx = static_cast< size_t >( idx );
+      ng2_label = ng2_semlabel->at( idx );
+      hipf = ng2_hipfrac->at( idx );
+      if ( ng2_mipfrac && ng2_mipfrac->size() > uidx ) {
+        mipf = ng2_mipfrac->at( idx );
+      }
+      if ( ng2_mclfrac && ng2_mclfrac->size() > uidx ) {
+        mclf = ng2_mclfrac->at( idx );
+      }
+      if ( ng2_bkgfrac && ng2_bkgfrac->size() > uidx ) {
+        bkgf = ng2_bkgfrac->at( idx );
+      }
+    }
+    out[ prefix + "_ng2_semlabel" ] = ng2_label;
+    out[ prefix + "_ng2_hipfrac" ] = hipf;
+    out[ prefix + "_ng2_mipfrac" ] = mipf;
+    out[ prefix + "_ng2_mclfrac" ] = mclf;
+    out[ prefix + "_ng2_bkgfrac" ] = bkgf;
+  };
+
+  store_candidate( "mu", muon_candidate_idx );
+  store_candidate( "lead_p", lead_p_candidate_idx );
+  store_candidate( "sub_p", sub_p_candidate_idx );
+
   // All right, we've applied all selection cuts. Set the flag that indicates
   // whether all were passed (and thus the event is selected as a CC2p0pi
-  // candidate). Note that the muon is not required to be contained and that
-  // the muon quality cut is not applied.
+  // candidate). Note that the muon is not required to be contained; the
+  // range/MCS quality cut is applied only to contained muon candidates.
+  // The proton PID is the NuGraph2 HIP requirement; the LLR proton PID flag
+  // (sel_passed_proton_pid_cut) is stored but no longer applied.
   bool sel_CC2p0pi = sel_nu_mu_cc && sel_no_reco_showers
-    && sel_muon_passed_mom_cuts
+    && sel_muon_passed_mom_cuts && sel_muon_quality_if_contained
+    && sel_muon_ng2_mip
     && sel_has_p_candidate && sel_two_p_candidates && sel_no_extra_pfps
-    && sel_passed_proton_pid_cut && sel_protons_contained
-    && sel_protons_passed_mom_cuts;
+    && sel_protons_ng2_hip && sel_protons_contained
+    && sel_protons_passed_mom_cuts
+    && sel_protons_near_vertex && sel_protons_no_descendents;
 
   // Store the muon and proton candidate indices in the output tree. We do
   // this here with the actual values (which may be BOGUS_INDEX if such a
@@ -399,6 +639,32 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
     return p3;
   };
 
+  // Proton version: for short tracks (length < PROTON_SHORT_TRACK_LENGTH) the
+  // track-fit direction is unreliable, so use the direction from the reco
+  // neutrino vertex to the far end of the track (the end, or the start if
+  // the track is flipped). For selected signal this halves the 90th
+  // percentile of the subleading-proton angular error (43 -> 21 deg) and
+  // improves the pair-variable resolutions by 10-20%. Longer tracks keep the
+  // (flipped) track-fit direction, which is slightly better there.
+  auto get_reco_p3_proton = [&]( int idx, float mom ) -> TVector3 {
+    TVector3 p3 = get_reco_p3( idx, mom );
+    if ( track_length->at( idx ) >= PROTON_SHORT_TRACK_LENGTH ) return p3;
+
+    TVector3 x3_start( track_start_x->at( idx ), track_start_y->at( idx ),
+      track_start_z->at( idx ) );
+    TVector3 x3_end( track_end_x->at( idx ), track_end_y->at( idx ),
+      track_end_z->at( idx ) );
+
+    float start_dist = track_start_distance->at( idx );
+    float end_dist = ( x3_end - x3_nu_vertex ).Mag();
+    TVector3 x3_far = ( start_dist > end_dist ) ? x3_start : x3_end;
+
+    TVector3 dir = x3_far - x3_nu_vertex;
+    if ( dir.Mag() <= 0. ) return p3;
+
+    return dir.Unit() * mom;
+  };
+
   // Set the reco 3-momentum of the muon candidate if we found one
   TVector3 p3mu;
   bool muon = muon_candidate_idx != BOGUS_INDEX;
@@ -425,7 +691,7 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
     float KEp = track_KE_proton->at( lead_p_candidate_idx );
     float p_mom = real_sqrt( KEp*KEp + 2.*PROTON_MASS*KEp );
 
-    p3_lead_p = get_reco_p3( lead_p_candidate_idx, p_mom );
+    p3_lead_p = get_reco_p3_proton( lead_p_candidate_idx, p_mom );
   }
 
   // Set the reco 3-momentum of the subleading proton candidate if we found one
@@ -435,7 +701,7 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
     float KEp = track_KE_proton->at( sub_p_candidate_idx );
     float p_mom = real_sqrt( KEp*KEp + 2.*PROTON_MASS*KEp );
 
-    p3_sub_p = get_reco_p3( sub_p_candidate_idx, p_mom );
+    p3_sub_p = get_reco_p3_proton( sub_p_candidate_idx, p_mom );
   }
 
   // Set the reco 3-momenta of all proton candidates (i.e., all generation == 2
@@ -454,7 +720,7 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
       float KEp = track_KE_proton->at( p );
       float p_mom = real_sqrt( KEp*KEp + 2.*PROTON_MASS*KEp );
 
-      p3_p_vec.push_back( get_reco_p3( p, p_mom ) );
+      p3_p_vec.push_back( get_reco_p3_proton( p, p_mom ) );
     }
 
     // Sort the reco proton 3-momenta in order from highest to lowest magnitude
@@ -1045,7 +1311,7 @@ std::string CC1mu2p0piv2::categorize_event( AnalysisEvent& ev ) {
   else if ( is_signal ) {
     switch ( mc_interaction_type ) {
       case QE_INTERACTION: return "Signal (CCQE)"; break;
-      case MEC_INTERACTION: return "Signal (CC2p2h)"; break;
+      case MEC_INTERACTION: return "Signal (CCMEC)"; break;
       case RES_INTERACTION: return "Signal (CCRES)"; break;
       default: return "Signal (CC other)";
     }
