@@ -1,7 +1,11 @@
 #pragma once
 
-#include <vector>
+#include <array>
+#include <cstddef>
 #include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <vector>
 
 // A dynamically-sized array with one or more dimensions. A one-dimensional
 // std::vector is used to store the array elements
