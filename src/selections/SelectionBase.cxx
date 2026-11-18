@@ -80,6 +80,9 @@ void SelectionBase::apply_selection( bool is_mc, AnalysisEvent& event ) {
     ++num_passed_events_;
   }
 
+  last_selected_ = selected;
+  last_mc_signal_ = mc_signal;
+
   // Always store the results below in the output TTree
   auto out_tree = event.out();
   out_tree[ selection_name_ + "_MC_Signal" ] = mc_signal;

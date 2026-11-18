@@ -38,6 +38,11 @@ public:
   inline const std::string& name() const { return selection_name_; }
   inline int passed_events() const { return num_passed_events_; }
 
+  // Results for the most recently processed event (set by apply_selection).
+  // Used by ProcessNTuples to decide which events to keep in its output.
+  inline bool last_selected() const { return last_selected_; }
+  inline bool last_mc_signal() const { return last_mc_signal_; }
+
   const CategoryMap& category_map() const;
   const TreeNameSet& input_tree_names() const;
 
@@ -75,6 +80,8 @@ private:
 
   std::string selection_name_;
   int num_passed_events_;
+  bool last_selected_ = false;
+  bool last_mc_signal_ = false;
 
   int event_category_;
 
