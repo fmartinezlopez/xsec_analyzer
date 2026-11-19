@@ -3,23 +3,10 @@
 #include "XSecAnalyzer/NtupleFormat.hh"
 
 void set_stats_and_dir( Universe& univ ) {
-  univ.hist_reco_->SetStats( false );
-  univ.hist_reco_->SetDirectory( nullptr );
-
-  univ.hist_true_->SetStats( false );
-  univ.hist_true_->SetDirectory( nullptr );
-
-  univ.hist_2d_->SetStats( false );
-  univ.hist_2d_->SetDirectory( nullptr );
-
-  univ.hist_categ_->SetStats( false );
-  univ.hist_categ_->SetDirectory( nullptr );
-
-  univ.hist_reco2d_->SetStats( false );
-  univ.hist_reco2d_->SetDirectory( nullptr );
-
-  univ.hist_true2d_->SetStats( false );
-  univ.hist_true2d_->SetDirectory( nullptr );
+  for ( TH1* h : univ.histograms() ) {
+    h->SetStats( false );
+    h->SetDirectory( nullptr );
+  }
 }
 
 bool has_ending( const std::string& fullString, const std::string& ending ) {
@@ -177,6 +164,15 @@ SystematicsCalculator::SystematicsCalculator(
     // previously
     this->load_universes( *total_subdir );
   }
+
+  // The MC statistical uncertainties and the smearceptance matrix need the
+  // full set of CV histograms, which compact universes do not have
+  if ( rw_universes_.count( CV_UNIV_NAME )
+    && this->cv_universe().compact() )
+  {
+    throw std::runtime_error( "The CV universe " + CV_UNIV_NAME
+      + " must not be compact" );
+  }
   // Also load the configuration of true and reco bins used to create the
   // universes
   std::string* true_bin_spec = nullptr;
@@ -259,9 +255,9 @@ void SystematicsCalculator::load_universes( TDirectoryFile& total_subdir ) {
     total_subdir.GetObject( (key + "_reco2d").c_str(), hist_reco2d );
     total_subdir.GetObject( (key + "_true2d").c_str(), hist_true2d );
 
-    if ( !hist_true || !hist_reco || !hist_2d || !hist_categ
-      || !hist_reco2d || !hist_true2d )
-    {
+    // Compact universes (see UniverseMaker.hh) have only the true and 2D
+    // histograms. The Universe constructor checks for a complete set.
+    if ( !hist_true || !hist_2d ) {
       throw std::runtime_error( "Failed to retrieve histograms for the "
         + key + " universe" );
     }
@@ -949,10 +945,14 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
 
               int univ_index = std::stoi( univ_index_str );
 
+              // Universes saved by univmake in compact form have no reco
+              // histogram (see UniverseMaker.hh)
+              bool compact = !subdir->FindKey( (key + "_reco").c_str() );
+
               // We have what we need to create the new Universe object. Do
               // it! Note that its owned histograms are currently empty.
               auto temp_univ = std::make_unique<Universe>( univ_name,
-                univ_index, num_true_bins, num_reco_bins );
+                univ_index, num_true_bins, num_reco_bins, compact );
 
               set_stats_and_dir( *temp_univ );
 
@@ -1003,41 +1003,39 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
               std::string hist_name_prefix = univ_name
                 + '_' + std::to_string( u_idx );
 
-              auto h_reco = get_object_unique_ptr< TH1D >(
-                (hist_name_prefix + "_reco"), *subdir );
+              // A compact universe takes only the true and 2D histograms
+              // (whichever form this file was saved in). A full one needs
+              // all six.
+              std::vector< std::string > suffixes = { "_true", "_2d" };
+              std::vector< TH1* > targets = { universe.hist_true_.get(),
+                universe.hist_2d_.get() };
+              if ( !universe.compact() ) {
+                for ( const auto& suffix : { "_reco", "_categ", "_reco2d",
+                  "_true2d" } )
+                {
+                  suffixes.push_back( suffix );
+                }
+                targets.push_back( universe.hist_reco_.get() );
+                targets.push_back( universe.hist_categ_.get() );
+                targets.push_back( universe.hist_reco2d_.get() );
+                targets.push_back( universe.hist_true2d_.get() );
+              }
 
-              auto h_true = get_object_unique_ptr< TH1D >(
-                (hist_name_prefix + "_true"), *subdir );
+              for ( size_t h = 0u; h < suffixes.size(); ++h ) {
+                auto hist = get_object_unique_ptr< TH1 >(
+                  hist_name_prefix + suffixes[ h ], *subdir );
+                if ( !hist ) throw std::runtime_error( "Missing histogram "
+                  + hist_name_prefix + suffixes[ h ] + " in " + file_name
+                  + " (were the univmake files made with and without"
+                  " compact universes?)" );
 
-              auto h_2d = get_object_unique_ptr< TH2D >(
-                (hist_name_prefix + "_2d"), *subdir );
-
-              auto h_categ = get_object_unique_ptr< TH2D >(
-                (hist_name_prefix + "_categ"), *subdir );
-
-              auto h_reco2d = get_object_unique_ptr< TH2D >(
-                (hist_name_prefix + "_reco2d"), *subdir );
-
-              auto h_true2d = get_object_unique_ptr< TH2D >(
-                (hist_name_prefix + "_true2d"), *subdir );
-
-              // Scale these histograms to the appropriate BNB data POT for
-              // the current run
-              h_reco->Scale( rw_scale_factor );
-              h_true->Scale( rw_scale_factor );
-              h_2d->Scale( rw_scale_factor );
-              h_categ->Scale( rw_scale_factor );
-              h_reco2d->Scale( rw_scale_factor );
-              h_true2d->Scale( rw_scale_factor );
-
-              // Add their contributions to the owned histograms for the
-              // current Universe object
-              universe.hist_reco_->Add( h_reco.get() );
-              universe.hist_true_->Add( h_true.get() );
-              universe.hist_2d_->Add( h_2d.get() );
-              universe.hist_categ_->Add( h_categ.get() );
-              universe.hist_reco2d_->Add( h_reco2d.get() );
-              universe.hist_true2d_->Add( h_true2d.get() );
+                // Scale to the appropriate BNB data POT for the current run
+                // and add the contribution to the owned histogram. Compact
+                // universes keep no summed squares of weights.
+                hist->Scale( rw_scale_factor,
+                  universe.compact() ? "nosw2" : "" );
+                targets[ h ]->Add( hist.get() );
+              }
 
             } // universes indices
 
@@ -1128,12 +1126,7 @@ void SystematicsCalculator::save_universes( TDirectoryFile& out_tdf ) {
     NFT type = pair.first;
     auto& universe = pair.second;
 
-    universe->hist_reco_->Write();
-    universe->hist_true_->Write();
-    universe->hist_2d_->Write();
-    universe->hist_categ_->Write();
-    universe->hist_reco2d_->Write();
-    universe->hist_true2d_->Write();
+    for ( TH1* h : universe->histograms() ) h->Write();
   }
 
   // Save the alternate CV MC histograms
@@ -1141,12 +1134,7 @@ void SystematicsCalculator::save_universes( TDirectoryFile& out_tdf ) {
     NFT type = pair.first;
     auto& universe = pair.second;
 
-    universe->hist_reco_->Write();
-    universe->hist_true_->Write();
-    universe->hist_2d_->Write();
-    universe->hist_categ_->Write();
-    universe->hist_reco2d_->Write();
-    universe->hist_true2d_->Write();
+    for ( TH1* h : universe->histograms() ) h->Write();
   }
 
   // Save the reweightable systematic histograms
@@ -1154,12 +1142,7 @@ void SystematicsCalculator::save_universes( TDirectoryFile& out_tdf ) {
 
     const auto& univ_vec = pair.second;
     for ( const auto& universe : univ_vec ) {
-      universe->hist_reco_->Write();
-      universe->hist_true_->Write();
-      universe->hist_2d_->Write();
-      universe->hist_categ_->Write();
-      universe->hist_reco2d_->Write();
-      universe->hist_true2d_->Write();
+      for ( TH1* h : universe->histograms() ) h->Write();
     }
 
   }

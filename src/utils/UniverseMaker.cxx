@@ -230,6 +230,13 @@ void UniverseMaker::build_universes(
   // Now prepare the vectors of Universe objects with the correct sizes
   this->prepare_universes( wh );
 
+  // Per-event storage for filling the compact universes: (buffer position,
+  // TTreeFormula weight) for the true bins and for the used 2D cells
+  const size_t num_true_bins = true_bins_.size();
+  const size_t num_reco_bins = reco_bins_.size();
+  std::vector< std::pair<size_t, double> > compact_true;
+  std::vector< std::pair<size_t, double> > compact_pairs;
+
   int treenumber = 0;
   for ( long long entry = 0; entry < input_chain_.GetEntries(); ++entry ) {
     // Load the TTree for the current TChain entry
@@ -309,9 +316,50 @@ void UniverseMaker::build_universes(
       }
     } // MC event
 
+    if ( !matched_true_bins.empty() ) has_true_entries_ = true;
+
+    // For the compact universes, list once per event the buffer positions to
+    // increment and the TTreeFormula weights to use (the same products, in
+    // the same order, as for the full histograms below)
+    compact_true.clear();
+    compact_pairs.clear();
+    if ( !compact_universes_map_.empty() ) {
+      for ( const auto& tb : matched_true_bins ) {
+        compact_true.emplace_back( tb.bin_index_, tb.weight_ );
+        for ( const auto& rb : matched_reco_bins ) {
+          int cell = compact_cell_index_[ tb.bin_index_ * num_reco_bins
+            + rb.bin_index_ ];
+          if ( cell < 0 ) continue;
+          compact_pairs.emplace_back( num_true_bins + cell,
+            tb.weight_ * rb.weight_ );
+        }
+      }
+    }
+
     for ( const auto& pair : wh.weight_map() ) {
       const std::string& wgt_name = pair.first;
       const auto& wgt_vec = pair.second;
+
+      auto compact_it = compact_universes_map_.find( wgt_name );
+      if ( compact_it != compact_universes_map_.end() ) {
+        // Skip events that fill nothing in these universes
+        if ( compact_true.empty() && compact_pairs.empty() ) continue;
+        double* buffer = compact_it->second.data();
+        for ( size_t u = 0u; u < wgt_vec->size(); ++u ) {
+          double w = wgt_vec->operator[]( u );
+          if (useNuMI) apply_cv_correction_weights( wgt_name, w, spline_weight, tune_weight, ppfx_weight, normalisation_weight );
+          else apply_cv_correction_weights( wgt_name, w, spline_weight, tune_weight );
+          double safe_wgt = safe_weight( w );
+          double* univ_values = buffer + u * compact_stride_;
+          for ( const auto& tp : compact_true ) {
+            univ_values[ tp.first ] += tp.second * safe_wgt;
+          }
+          for ( const auto& cp : compact_pairs ) {
+            univ_values[ cp.first ] += cp.second * safe_wgt;
+          }
+        }
+        continue;
+      }
 
       auto& u_vec = universes_.at( wgt_name );
 
@@ -410,9 +458,31 @@ void UniverseMaker::prepare_universes( const WeightHandler& wh ) {
   size_t num_true_bins = true_bins_.size();
   size_t num_reco_bins = reco_bins_.size();
 
+  // Map the used cells of the 2D histogram for the compact universes
+  compact_cells_.clear();
+  compact_cell_index_.assign( num_true_bins * num_reco_bins, -1 );
+  for ( size_t t = 0u; t < num_true_bins; ++t ) {
+    for ( size_t r = 0u; r < num_reco_bins; ++r ) {
+      if ( !response_cell_is_used( true_bins_.at(t), reco_bins_.at(r) ) ) {
+        continue;
+      }
+      compact_cell_index_[ t * num_reco_bins + r ] = compact_cells_.size();
+      compact_cells_.emplace_back( t, r );
+    }
+  }
+  compact_stride_ = num_true_bins + compact_cells_.size();
+
   for ( const auto& pair : wh.weight_map() ) {
     const std::string& weight_name = pair.first;
     size_t num_universes = pair.second->size();
+
+    if ( compact_universes_
+      && !universe_needs_all_histograms( weight_name ) )
+    {
+      compact_universes_map_[ weight_name ].assign(
+        num_universes * compact_stride_, 0. );
+      continue;
+    }
 
     std::vector< Universe > u_vec;
 
@@ -556,6 +626,37 @@ void UniverseMaker::save_histograms(
         univ.hist_categ_->Write();
         univ.hist_true2d_->Write();
       }
+    } // universes
+  } // weight names
+
+  // Turn the compact universes into histograms one at a time and save them.
+  // They have no reco-only histograms, and like the others their true and 2D
+  // histograms are only saved when MC truth information is available.
+  if ( !has_true_entries_ ) return;
+
+  size_t num_true_bins = true_bins_.size();
+  size_t num_reco_bins = reco_bins_.size();
+  for ( const auto& pair : compact_universes_map_ ) {
+    const std::string& weight_name = pair.first;
+    const auto& buffer = pair.second;
+    size_t num_universes = buffer.size() / compact_stride_;
+    for ( size_t u = 0u; u < num_universes; ++u ) {
+      Universe univ( weight_name, u, num_true_bins, num_reco_bins, true );
+      for ( TH1* h : univ.histograms() ) h->SetDirectory( nullptr );
+      const double* univ_values = buffer.data() + u * compact_stride_;
+      for ( size_t t = 0u; t < num_true_bins; ++t ) {
+        univ.hist_true_->SetBinContent( t + 1, univ_values[ t ] );
+      }
+      for ( size_t c = 0u; c < compact_cells_.size(); ++c ) {
+        const auto& cell = compact_cells_[ c ];
+        double value = univ_values[ num_true_bins + c ];
+        if ( value != 0. ) {
+          univ.hist_2d_->SetBinContent( cell.first + 1, cell.second + 1,
+            value );
+        }
+      }
+      univ.hist_true_->Write();
+      univ.hist_2d_->Write();
     } // universes
   } // weight names
 }

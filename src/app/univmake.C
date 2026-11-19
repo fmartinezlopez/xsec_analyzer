@@ -38,22 +38,45 @@ bool is_reweightable_mc_ntuple( const std::string& input_file_name ) {
 
 int main( int argc, char* argv[] ) {
 
-  if ( argc != 4 && argc != 5 ) {
+  // Options start with "--" and may appear anywhere on the command line
+  bool compact_universes = false;
+  std::vector< std::string > args;
+  for ( int a = 1; a < argc; ++a ) {
+    std::string arg( argv[a] );
+    if ( arg == "--compact" ) compact_universes = true;
+    else if ( arg.rfind( "--", 0 ) == 0 ) {
+      std::cout << "Unrecognized option " << arg << '\n';
+      return 1;
+    }
+    else args.push_back( arg );
+  }
+
+  if ( args.size() != 3 && args.size() != 4 ) {
     std::cout << "Usage: univmake LIST_FILE"
 	      << " UNIVMAKE_CONFIG_FILE OUTPUT_ROOT_FILE"
-	      << " [FILE_PROPERTIES_CONFIG_FILE]\n";
+	      << " [FILE_PROPERTIES_CONFIG_FILE] [--compact]\n"
+	      << "  --compact: keep only the true and 2D histograms of the"
+	      << " reweightable\n"
+	      << "    systematic universes, and in the 2D histogram only the"
+	      << " cells used for\n"
+	      << "    the covariance matrices (same-block signal cells and the"
+	      << " background rows).\n"
+	      << "    The CV, unweighted and detector-variation universes are"
+	      << " kept in full.\n";
     return 1;
   }
 
-  std::string list_file_name( argv[1] );
-  std::string univmake_config_file_name( argv[2] );
-  std::string output_file_name( argv[3] );
+  std::string list_file_name( args[0] );
+  std::string univmake_config_file_name( args[1] );
+  std::string output_file_name( args[2] );
 
   std::cout << "\nRunning univmake.C with options:\n";
   std::cout << "\tlist_file_name: " << list_file_name << '\n';
   std::cout << "\tunivmake_config_file_name: "
     << univmake_config_file_name << '\n';
   std::cout << "\toutput_file_name: " << output_file_name << '\n';
+  std::cout << "\tcompact universes: " << ( compact_universes ? "yes" : "no" )
+    << '\n';
 
   // Simultaneously check that we can write to the output file directory, and wipe any information within that file
   TFile* temp_file = new TFile(output_file_name.c_str(), "recreate");
@@ -70,8 +93,8 @@ int main( int argc, char* argv[] ) {
   // the use of MCC9SystematicsCalculator to compute total event count
   // histograms (see below).
   auto& fpm = FilePropertiesManager::Instance();
-  if ( argc == 5 ) {
-    fpm.load_file_properties( argv[4] );
+  if ( args.size() == 4 ) {
+    fpm.load_file_properties( args[3] );
   }
 
   // Regardless of whether the default was used or not, retrieve the
@@ -120,6 +143,7 @@ int main( int argc, char* argv[] ) {
       << input_file_name << '\n';
 
     UniverseMaker univ_maker( univmake_config_file_name );
+    univ_maker.set_compact_universes( compact_universes );
 
     univ_maker.add_input_file( input_file_name.c_str() );
 

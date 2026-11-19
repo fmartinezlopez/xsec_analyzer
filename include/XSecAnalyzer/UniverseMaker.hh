@@ -3,7 +3,9 @@
 // Standard library includes
 #include <algorithm>
 #include <fstream>
+#include <initializer_list>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -265,29 +267,41 @@ inline std::istream& operator>>( std::istream& in, RecoBin& rb ) {
 
 // Provides a set of histograms used to store summed bin counts (with
 // associated MC statistical uncertainties) in a given systematic variation
-// universe
+// universe.
+//
+// A "compact" universe (see UniverseMaker::set_compact_universes()) owns only
+// hist_true_ and hist_2d_, without summed squares of weights, and its other
+// histogram pointers are null. In hist_2d_ only the cells read by
+// SystematicsCalculator::evaluate_observable() are filled: signal true bins
+// against reco bins of the same block, and the full rows of the background
+// true bins. This is all that a reweightable systematic universe needs. The
+// CV, unweighted, detector-variation, alternate-CV and fake-data universes are
+// never compact.
 class Universe {
 
   public:
 
     inline Universe( const std::string& universe_name,
-      size_t universe_index, int num_true_bins, int num_reco_bins )
+      size_t universe_index, int num_true_bins, int num_reco_bins,
+      bool compact = false )
       : universe_name_( universe_name ), index_( universe_index )
     {
       std::string hist_name_prefix = universe_name + '_'
         + std::to_string( universe_index );
-        
+
       hist_true_ = std::make_unique< TH1D >(
         (hist_name_prefix + "_true").c_str(), "; true bin number; events",
         num_true_bins, 0., num_true_bins );
 
-      hist_reco_ = std::make_unique< TH1D >(
-        (hist_name_prefix + "_reco").c_str(), "; reco bin number; events",
-        num_reco_bins, 0., num_reco_bins );
-
       hist_2d_ = std::make_unique< TH2D >( (hist_name_prefix + "_2d").c_str(),
         "; true bin number; reco bin number; counts", num_true_bins, 0.,
         num_true_bins, num_reco_bins, 0., num_reco_bins );
+
+      if ( compact ) return;
+
+      hist_reco_ = std::make_unique< TH1D >(
+        (hist_name_prefix + "_reco").c_str(), "; reco bin number; events",
+        num_reco_bins, 0., num_reco_bins );
 
       hist_reco2d_ = std::make_unique< TH2D >(
         (hist_name_prefix + "_reco2d").c_str(),
@@ -315,7 +329,8 @@ class Universe {
     }
 
     // Note: the new Universe object takes ownership of the histogram
-    // pointers passed to this constructor
+    // pointers passed to this constructor. For a compact universe, hist_reco,
+    // hist_categ, hist_reco2d and hist_true2d are all null.
     inline Universe( const std::string& universe_name,
       size_t universe_index, TH1D* hist_true, TH1D* hist_reco, TH2D* hist_2d,
       TH2D* hist_categ, TH2D* hist_reco2d, TH2D* hist_true2d )
@@ -324,27 +339,44 @@ class Universe {
       hist_categ_( hist_categ ), hist_reco2d_( hist_reco2d ),
       hist_true2d_( hist_true2d )
     {
-      hist_true_->SetDirectory( nullptr );
-      hist_reco_->SetDirectory( nullptr );
-      hist_2d_->SetDirectory( nullptr );
-      hist_categ_->SetDirectory( nullptr );
-      hist_reco2d_->SetDirectory( nullptr );
-      hist_true2d_->SetDirectory( nullptr );
+      bool any_missing = !hist_reco || !hist_categ || !hist_reco2d
+        || !hist_true2d;
+      bool all_missing = !hist_reco && !hist_categ && !hist_reco2d
+        && !hist_true2d;
+      if ( !hist_true || !hist_2d || ( any_missing && !all_missing ) ) {
+        throw std::runtime_error( "Incomplete set of histograms for the "
+          + universe_name + '_' + std::to_string( universe_index )
+          + " universe" );
+      }
+      for ( TH1* h : this->histograms() ) h->SetDirectory( nullptr );
     }
 
     inline std::unique_ptr< Universe > clone() const {
       int num_true_bins = hist_2d_->GetXaxis()->GetNbins();
       int num_reco_bins = hist_2d_->GetYaxis()->GetNbins();
       auto result = std::make_unique< Universe >( universe_name_,
-        index_, num_true_bins, num_reco_bins );
+        index_, num_true_bins, num_reco_bins, this->compact() );
 
-      result->hist_true_->Add( this->hist_true_.get() );
-      result->hist_reco_->Add( this->hist_reco_.get() );
-      result->hist_2d_->Add( this->hist_2d_.get() );
-      result->hist_categ_->Add( this->hist_categ_.get() );
-      result->hist_reco2d_->Add( this->hist_reco2d_.get() );
-      result->hist_true2d_->Add( this->hist_true2d_.get() );
+      auto mine = this->histograms();
+      auto theirs = result->histograms();
+      for ( size_t h = 0u; h < mine.size(); ++h ) theirs[ h ]->Add( mine[ h ] );
 
+      return result;
+    }
+
+    // True if this universe owns only hist_true_ and hist_2d_
+    inline bool compact() const { return !hist_reco_; }
+
+    // The histograms owned by this universe, in a fixed order (true, reco,
+    // 2d, categ, reco2d, true2d), skipping those absent in a compact one
+    inline std::vector< TH1* > histograms() const {
+      std::vector< TH1* > result;
+      for ( TH1* h : std::initializer_list< TH1* >{ hist_true_.get(),
+        hist_reco_.get(), hist_2d_.get(), hist_categ_.get(),
+        hist_reco2d_.get(), hist_true2d_.get() } )
+      {
+        if ( h ) result.push_back( h );
+      }
       return result;
     }
 
@@ -362,6 +394,23 @@ class Universe {
 
     static size_t num_categories_;
 };
+
+// True if the true-reco cell (true_bin, reco_bin) of a universe's 2D histogram
+// is ever read when evaluating an observable (see the comment above the
+// Universe class)
+inline bool response_cell_is_used( const TrueBin& true_bin,
+  const RecoBin& reco_bin )
+{
+  if ( true_bin.type_ != kSignalTrueBin ) return true;
+  return true_bin.block_index_ == reco_bin.block_index_;
+}
+
+// True if universes with this name must keep all of their histograms even
+// when compact universes are requested
+inline bool universe_needs_all_histograms( const std::string& name ) {
+  return name == UNWEIGHTED_NAME || name == TUNE_WEIGHT_NAME
+    || name == SPLINE_WEIGHT_NAME || name == PPFX_WEIGHT_NAME;
+}
 
 class UniverseMaker {
 
@@ -404,8 +453,16 @@ class UniverseMaker {
     void save_histograms( const std::string& output_file_name,
       const std::string& subdirectory_name, bool update_file = true );
 
-    // Provides read-only access to the map of Universe objects
+    // Provides read-only access to the map of Universe objects. Compact
+    // universes are not included (they are kept in a flat buffer and only
+    // turned into histograms when saved).
     const auto& universe_map() const { return universes_; }
+
+    // When enabled, the reweightable systematic universes (all but the
+    // CV-type and unweighted ones, see universe_needs_all_histograms()) are
+    // built as compact universes. This must be set before build_universes().
+    inline void set_compact_universes( bool compact )
+      { compact_universes_ = compact; }
 
     // Returns the name of the TDirectoryFile that will be used to hold the
     // universe histograms when they are written to the output ROOT file
@@ -474,6 +531,25 @@ class UniverseMaker {
 
     // Stores Universe objects used to accumulate event weights
     std::map< std::string, std::vector<Universe> > universes_;
+
+    // Whether reweightable systematic universes are built as compact ones
+    bool compact_universes_ = false;
+
+    // Summed event weights for the compact universes, one flat buffer per
+    // weight name. Universe u occupies compact_stride_ consecutive values
+    // starting at u * compact_stride_: the true bins first, followed by the
+    // used cells of the 2D histogram in the order of compact_cells_.
+    std::map< std::string, std::vector<double> > compact_universes_map_;
+    size_t compact_stride_ = 0u;
+
+    // The used (true bin, reco bin) cells of the 2D histogram, and the
+    // position of each true-reco pair in that list (-1 if unused), indexed
+    // by true_bin * num_reco_bins + reco_bin
+    std::vector< std::pair<size_t, size_t> > compact_cells_;
+    std::vector< int > compact_cell_index_;
+
+    // Set when at least one MC event was found in a true bin
+    bool has_true_entries_ = false;
 
     // Root TDirectoryFile name to use when writing the universes to an output
     // ROOT file
