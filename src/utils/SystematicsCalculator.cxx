@@ -395,7 +395,11 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
     int run = run_and_type_pair.first;
     const auto& type_map = run_and_type_pair.second;
 
-    const auto& bnb_file_set = type_map.at( NFT::kOnBNB );
+    // Runs listed only for their detector-variation samples (e.g. a single
+    // set shared by several data runs) have no data files
+    static const std::set< std::string > no_files;
+    const auto& bnb_file_set = type_map.count( NFT::kOnBNB )
+      ? type_map.at( NFT::kOnBNB ) : no_files;
     for ( const std::string& bnb_file : bnb_file_set ) {
       const auto& pot_and_trigs = data_norm_map.at( bnb_file );
 
@@ -409,7 +413,8 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
 
     } // BNB data files
 
-    const auto& ext_file_set = type_map.at( NFT::kExtBNB );
+    const auto& ext_file_set = type_map.count( NFT::kExtBNB )
+      ? type_map.at( NFT::kExtBNB ) : no_files;
     for ( const std::string& ext_file : ext_file_set ) {
       const auto& pot_and_trigs = data_norm_map.at( ext_file );
 
@@ -429,6 +434,183 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
   total_bnb_data_pot_ = 0.;
   for ( const auto& pair : run_to_bnb_pot_map ) {
     total_bnb_data_pot_ += pair.second;
+  }
+
+  // ---- Detector-variation samples, possibly one set per run ----
+  //
+  // Every detVar universe (variations and CVs) is the POT-weighted sum over
+  // the data runs r of the detVar sets s used for r, with fixed fractions
+  // f_{r,s} (summing to one over s):
+  //
+  //   U_t = sum_r POT_r sum_s f_{r,s} V_{s,t} / POT_file( s, t )
+  //
+  // The sets of a run are given with "detVarRun r SOURCE [SOURCE ...]" lines
+  // in the file properties table (see FilePropertiesManager). By default a
+  // run uses its own detVar set if there is one, and all sets otherwise. The
+  // fractions are given explicitly or proportional to each set's detVarCV
+  // POT. Because they are the same for every variation type, each variation
+  // is compared with a CV built from the same mixture of sets. With a single
+  // set this is the previous behaviour (that set scaled to the total BNB data
+  // POT).
+  //
+  // The "extra CV" used for the SCE and Recomb2 variations is built the same
+  // way from each set's detVarCVExtra file, or from its detVarCV file for
+  // sets that do not ship one.
+  using FPM = FilePropertiesManager;
+  std::map< int, std::map< NFT, std::string > > dv_files; // set -> type -> file
+  for ( const auto& run_and_type_pair : fpm.ntuple_file_map() ) {
+    for ( const auto& type_and_files : run_and_type_pair.second ) {
+      if ( !ntuple_type_is_detVar( type_and_files.first ) ) continue;
+      if ( type_and_files.second.size() != 1u ) {
+        throw std::runtime_error( "Expected one "
+          + fpm.ntuple_type_to_string( type_and_files.first )
+          + " file for run " + std::to_string( run_and_type_pair.first )
+          + ", found " + std::to_string( type_and_files.second.size() ) );
+      }
+      dv_files[ run_and_type_pair.first ][ type_and_files.first ]
+        = *type_and_files.second.begin();
+    }
+  }
+
+  // Scale factors per file: for the variation types (and the CVs) and for
+  // the files that build the extra CV
+  std::map< std::string, double > dv_file_scale, dv_cvx_scale;
+
+  if ( !dv_files.empty() ) {
+
+    std::map< std::string, double > dv_pot;
+    for ( const auto& set_pair : dv_files ) {
+      for ( const auto& type_pair : set_pair.second ) {
+        TFile temp_file( type_pair.second.c_str(), "read" );
+        double pot = get_summed_pot( temp_file );
+        if ( !( pot > 0. ) ) throw std::runtime_error( "Missing POT in"
+          " detVar file " + type_pair.second );
+        dv_pot[ type_pair.second ] = pot;
+      }
+    }
+
+    // detVarCV POT of a set (default weight in a mixture of sets)
+    auto cv_pot = [&]( int set ) {
+      const auto& m = dv_files.at( set );
+      if ( !m.count( NFT::kDetVarMCCV ) ) {
+        throw std::runtime_error( "detVar set " + std::to_string( set )
+          + " has no detVarCV file, so it needs an explicit weight in the"
+          " detVarRun lines that use it" );
+      }
+      return dv_pot.at( m.at( NFT::kDetVarMCCV ) );
+    };
+
+    // Sets and fractions of every data run
+    const auto& dv_map = fpm.detvar_run_map();
+    for ( const auto& pair : dv_map ) {
+      if ( !run_to_bnb_pot_map.count( pair.first ) ) {
+        std::cout << "WARNING: detVarRun line for run " << pair.first
+          << ", which has no beam-on data\n";
+      }
+    }
+    std::map< int, std::vector< std::pair< int, double > > > dv_source;
+    for ( const auto& pair : run_to_bnb_pot_map ) {
+      int run = pair.first;
+      FPM::DetVarSources req;
+      if ( dv_map.count( run ) ) req = dv_map.at( run );
+      else if ( dv_files.count( run ) ) {
+        req.emplace_back( run, FPM::DETVAR_DEFAULT_WEIGHT );
+      }
+      else req.emplace_back( FPM::DETVAR_POOLED, FPM::DETVAR_DEFAULT_WEIGHT );
+      if ( req.size() == 1u && req.front().first == FPM::DETVAR_POOLED ) {
+        req.clear();
+        for ( const auto& set_pair : dv_files ) {
+          req.emplace_back( set_pair.first, FPM::DETVAR_DEFAULT_WEIGHT );
+        }
+      }
+      double sum = 0.;
+      std::vector< std::pair< int, double > > src;
+      for ( const auto& sw : req ) {
+        if ( !dv_files.count( sw.first ) ) {
+          throw std::runtime_error( "detVar source run "
+            + std::to_string( sw.first ) + " for data run "
+            + std::to_string( run ) + " has no detVar files" );
+        }
+        double wgt = ( sw.second == FPM::DETVAR_DEFAULT_WEIGHT )
+          ? cv_pot( sw.first ) : sw.second;
+        src.emplace_back( sw.first, wgt );
+        sum += wgt;
+      }
+      for ( auto& sw : src ) sw.second /= sum;
+      dv_source[ run ] = src;
+    }
+
+    // Accumulate the scale factors of one "kind" of universe, given the
+    // file of each set that provides it
+    auto accumulate = [&]( const std::map< int, std::string >& set_file,
+      std::map< std::string, double >& scale, const std::string& label )
+    {
+      if ( set_file.empty() ) return;
+      for ( const auto& pair : run_to_bnb_pot_map ) {
+        for ( const auto& sw : dv_source.at( pair.first ) ) {
+          if ( !set_file.count( sw.first ) ) {
+            throw std::runtime_error( "Data run "
+              + std::to_string( pair.first ) + " uses the detVar set of run "
+              + std::to_string( sw.first ) + ", which has no " + label
+              + " file (change its sets with a detVarRun line)" );
+          }
+          const std::string& f = set_file.at( sw.first );
+          scale[ f ] += pair.second * sw.second / dv_pot.at( f );
+        }
+      }
+    };
+
+    std::set< NFT > dv_types;
+    for ( const auto& set_pair : dv_files ) {
+      for ( const auto& type_pair : set_pair.second ) {
+        if ( type_pair.first != NFT::kDetVarMCCVExtra ) {
+          dv_types.insert( type_pair.first );
+        }
+      }
+    }
+    for ( NFT t : dv_types ) {
+      std::map< int, std::string > set_file;
+      for ( const auto& set_pair : dv_files ) {
+        if ( set_pair.second.count( t ) ) set_file[ set_pair.first ]
+          = set_pair.second.at( t );
+      }
+      accumulate( set_file, dv_file_scale, fpm.ntuple_type_to_string( t ) );
+    }
+    std::map< int, std::string > cvx_file;
+    for ( const auto& set_pair : dv_files ) {
+      const auto& m = set_pair.second;
+      if ( m.count( NFT::kDetVarMCCVExtra ) ) {
+        cvx_file[ set_pair.first ] = m.at( NFT::kDetVarMCCVExtra );
+      }
+      else if ( m.count( NFT::kDetVarMCCV ) ) {
+        cvx_file[ set_pair.first ] = m.at( NFT::kDetVarMCCV );
+      }
+    }
+    accumulate( cvx_file, dv_cvx_scale, "detVarCVExtra or detVarCV" );
+
+    std::cout << "\nDetector-variation sources (data run -> detVar sets,"
+      " fractions):\n";
+    for ( const auto& pair : dv_source ) {
+      std::cout << "  run " << pair.first << " ("
+        << run_to_bnb_pot_map.at( pair.first ) << " POT) ->";
+      for ( const auto& sw : pair.second ) {
+        std::cout << " set " << sw.first << ": " << sw.second;
+      }
+      std::cout << '\n';
+    }
+    std::cout << "Detector-variation scale factors:\n";
+    for ( const auto& set_pair : dv_files ) {
+      for ( const auto& type_pair : set_pair.second ) {
+        const std::string& f = type_pair.second;
+        std::cout << "  set " << set_pair.first << " "
+          << fpm.ntuple_type_to_string( type_pair.first ) << ": "
+          << ( dv_file_scale.count( f ) ? dv_file_scale.at( f ) : 0. );
+        if ( dv_cvx_scale.count( f ) ) {
+          std::cout << " (extra CV: " << dv_cvx_scale.at( f ) << ')';
+        }
+        std::cout << "  [" << f << "]\n";
+      }
+    }
   }
 
   // Loop through the ntuple files for the various run / ntuple file type
@@ -660,38 +842,6 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
         // Now we'll take care of the detVar and altCV samples.
         else if ( is_detVar || is_altCV ) {
 
-          std::string dv_univ_name = fpm.ntuple_type_to_string( type );
-
-          // Make a temporary new Universe object to store
-          // (POT-scaled) detVar/altCV histograms (if needed)
-          auto temp_univ = std::make_unique< Universe >( dv_univ_name,
-            0, num_true_bins, num_reco_bins );
-
-          // Temporary pointer that will allow us to treat the single-file
-          // detector variation samples and the multi-file alternate CV samples
-          // on the same footing below
-          Universe* temp_univ_ptr = nullptr;
-
-          // Check whether a prior altCV Universe exists in the map
-          bool prior_altCV = alt_cv_universes_.count( type ) > 0;
-
-          // Right now, we're assuming there's just one detVar ntuple file
-          // per universe. If this assumption is violated, our scaling will
-          // be screwed up. Prevent this from happening by throwing an
-          // exception when a duplicate is encountered.
-          // TODO: revisit this when you have detVar samples for all runs
-          if ( is_detVar && detvar_universes_.count(type) ) {
-            throw std::runtime_error( "Duplicate detVar ntuple file!" );
-          }
-          // For the alternate CV sample, if a previous universe already
-          // exists in the map, then get access to it via a pointer
-          else if ( is_altCV && prior_altCV ) {
-            temp_univ_ptr = alt_cv_universes_.at( type ).get();
-          }
-          else {
-            temp_univ_ptr = temp_univ.get();
-          }
-
           // The detector variation and alternate CV universes are all labeled
           // "unweighted" in the response matrix files. Retrieve the
           // corresponding histograms.
@@ -714,50 +864,54 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
           auto hist_true2d = get_object_unique_ptr< TH2D >(
             "unweighted_0_true2d", *subdir );
 
-          double temp_scale_factor = 1.;
+          // Universes to add this file to, with their scale factors
+          std::vector< std::pair< NFT, double > > targets;
           if ( is_altCV ) {
             // AltCV ntuple files are available for all runs, so scale
             // each individually to the BNB data POT for the current run
-            double temp_run_pot = run_to_bnb_pot_map.at( run );
-            temp_scale_factor = temp_run_pot / file_pot;
+            targets.emplace_back( type, run_to_bnb_pot_map.at( run ) / file_pot );
+          }
+          else if ( type == NFT::kDetVarMCCVExtra ) {
+            // (see the detector-variation scale factors computed above)
+            targets.emplace_back( type, dv_cvx_scale.count( file_name )
+              ? dv_cvx_scale.at( file_name ) : 0. );
           }
           else {
-            // Scale all detVar universe histograms from the simulated POT to
-            // the *total* BNB data POT for all runs analyzed. Since we only
-            // have detVar samples for Run 3b, we assume that they can be
-            // applied globally in this step.
-            // TODO: revisit this as appropriate
-            temp_scale_factor = total_bnb_data_pot_ / file_pot;
+            targets.emplace_back( type, dv_file_scale.count( file_name )
+              ? dv_file_scale.at( file_name ) : 0. );
+            // A set without its own extra CV contributes its CV to it
+            if ( type == NFT::kDetVarMCCV && dv_cvx_scale.count( file_name ) ) {
+              targets.emplace_back( NFT::kDetVarMCCVExtra,
+                dv_cvx_scale.at( file_name ) );
+            }
           }
 
-          // Apply the scaling factor defined above to all histograms that
-          // will be owned by the new Universe
-          hist_reco->Scale( temp_scale_factor );
-          hist_true->Scale( temp_scale_factor );
-          hist_2d->Scale( temp_scale_factor );
-          hist_categ->Scale( temp_scale_factor );
-          hist_reco2d->Scale( temp_scale_factor );
-          hist_true2d->Scale( temp_scale_factor );
+          for ( const auto& target : targets ) {
+            NFT t = target.first;
+            double scale = target.second;
+            if ( !( scale > 0. ) ) {
+              std::cout << "WARNING: " << file_name << " is not used by any"
+                << " data run (" << fpm.ntuple_type_to_string( t ) << ")\n";
+              continue;
+            }
+            auto& univ_map = is_altCV ? alt_cv_universes_ : detvar_universes_;
+            auto& slot = univ_map[ t ];
+            if ( !slot ) {
+              slot = std::make_unique< Universe >(
+                fpm.ntuple_type_to_string( t ), 0, num_true_bins,
+                num_reco_bins );
+            }
+            // Add the scaled contents of these histograms to the
+            // corresponding histograms in the universe
+            slot->hist_reco_->Add( hist_reco.get(), scale );
+            slot->hist_true_->Add( hist_true.get(), scale );
+            slot->hist_2d_->Add( hist_2d.get(), scale );
+            slot->hist_categ_->Add( hist_categ.get(), scale );
+            slot->hist_reco2d_->Add( hist_reco2d.get(), scale );
+            slot->hist_true2d_->Add( hist_true2d.get(), scale );
 
-          // Add the scaled contents of these histograms to the
-          // corresponding histograms in the new Universe object
-          temp_univ_ptr->hist_reco_->Add( hist_reco.get() );
-          temp_univ_ptr->hist_true_->Add( hist_true.get() );
-          temp_univ_ptr->hist_2d_->Add( hist_2d.get() );
-          temp_univ_ptr->hist_categ_->Add( hist_categ.get() );
-          temp_univ_ptr->hist_reco2d_->Add( hist_reco2d.get() );
-          temp_univ_ptr->hist_true2d_->Add( hist_true2d.get() );
-
-          // Adjust the owned histograms to avoid auto-deletion problems
-          set_stats_and_dir( *temp_univ_ptr );
-
-          // If one wasn't present before, then move the finished Universe
-          // object into the map
-          if ( is_detVar ) {
-            detvar_universes_[ type ].reset( temp_univ.release() );
-          }
-          else if ( !prior_altCV ) { // is_altCV
-            alt_cv_universes_[ type ].reset( temp_univ.release() );
+            // Adjust the owned histograms to avoid auto-deletion problems
+            set_stats_and_dir( *slot );
           }
 
         } // detVar and altCV samples

@@ -9,6 +9,9 @@
 #include <set>
 #include <sstream>
 #include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
 // Enum used to label types of analysis ntuple files
 enum class NtupleFileType {
@@ -136,6 +139,21 @@ class FilePropertiesManager {
       std::set<std::string> > >& ntuple_file_map() const
       { return ntuple_file_map_; }
 
+    // Sources of the detector-variation samples for a data run, set with
+    // "detVarRun DATA_RUN SOURCE [SOURCE ...]" lines in the file properties
+    // table. Each SOURCE is the run number of a detVar set, optionally with a
+    // weight ("31:0.4"), or "pooled" (all detVar sets). Weights are either
+    // given for every set of a line or for none; they are normalised to unit
+    // sum, and default to the sets' detVarCV simulated POT. Data runs without
+    // an entry use their own detVar set if there is one, and all sets pooled
+    // otherwise. A weight of DETVAR_DEFAULT_WEIGHT means "not given", and a
+    // source set of DETVAR_POOLED stands for all sets.
+    static constexpr int DETVAR_POOLED = -1;
+    static constexpr double DETVAR_DEFAULT_WEIGHT = -1.;
+    using DetVarSources = std::vector< std::pair< int, double > >;
+    inline const std::map< int, DetVarSources >& detvar_run_map() const
+      { return detvar_run_map_; }
+
     // NOTE: This function assumes that there are no duplicate entries in the
     // nested ntuple file type map. That should always be the case, but beware
     // any odd situations that might break the approach used here.
@@ -192,6 +210,7 @@ class FilePropertiesManager {
       // analysis ntuple file properties
       ntuple_file_map_.clear();
       data_norm_map_.clear();
+      detvar_run_map_.clear();
 
       const char* path = std::getenv( "XSEC_ANALYZER_DIR" );
       if ( !path ) {
@@ -226,9 +245,60 @@ class FilePropertiesManager {
 
       std::string temp_line;
       while ( std::getline(in_file, temp_line) ) {
-        // Ignore lines that begin with the '#' character (this allows for
-        // comments in the normalization table file
+        // Ignore empty lines and lines that begin with the '#' character
+        // (this allows for comments in the normalization table file)
+        if ( temp_line.find_first_not_of( " \t\r" ) == std::string::npos ) continue;
         if ( temp_line.front() == '#' ) continue;
+
+        // "detVarRun DATA_RUN SOURCE": detector-variation source for a run
+        {
+          std::istringstream kw_ss( temp_line );
+          std::string keyword;
+          kw_ss >> keyword;
+          if ( keyword == "detVarRun" ) {
+            auto bad_line = [&]() {
+              return std::runtime_error( "Malformed detVarRun line in "
+                + in_file_name + ": \"" + temp_line + '"' );
+            };
+            int data_run;
+            if ( !( kw_ss >> data_run ) ) throw bad_line();
+            DetVarSources sources;
+            std::string token;
+            int num_weighted = 0;
+            while ( kw_ss >> token ) {
+              if ( token == "pooled" ) {
+                sources.emplace_back( DETVAR_POOLED, DETVAR_DEFAULT_WEIGHT );
+                continue;
+              }
+              size_t colon = token.find( ':' );
+              try {
+                size_t pos = 0;
+                int set = std::stoi( token.substr( 0, colon ), &pos );
+                if ( pos != token.substr( 0, colon ).size() ) throw bad_line();
+                double weight = DETVAR_DEFAULT_WEIGHT;
+                if ( colon != std::string::npos ) {
+                  weight = std::stod( token.substr( colon + 1 ) );
+                  if ( !( weight > 0. ) ) throw bad_line();
+                  ++num_weighted;
+                }
+                sources.emplace_back( set, weight );
+              }
+              catch ( const std::logic_error& ) { throw bad_line(); }
+            }
+            bool has_pooled = false;
+            for ( const auto& src : sources ) {
+              if ( src.first == DETVAR_POOLED ) has_pooled = true;
+            }
+            if ( sources.empty() || ( has_pooled && sources.size() > 1u )
+              || ( num_weighted > 0
+              && num_weighted != static_cast< int >( sources.size() ) ) )
+            {
+              throw bad_line();
+            }
+            detvar_run_map_[ data_run ] = sources;
+            continue;
+          }
+        }
 
         // Read in the ntuple file name, the run number, and the file type from
         // the current line of the table file
@@ -290,6 +360,10 @@ class FilePropertiesManager {
     // Keys are file names for processed data ntuples, values are objects
     // storing the corresponding number of triggers and POT exposure
     std::map< std::string, TriggersAndPOT > data_norm_map_;
+
+    // Keys are data run numbers, values are the detVar sets to use for them
+    // (see detvar_run_map() above)
+    std::map< int, DetVarSources > detvar_run_map_;
 
     std::map< std::string, NtupleFileType > string_to_file_type_map_ = {
       { "onBNB", NtupleFileType::kOnBNB },

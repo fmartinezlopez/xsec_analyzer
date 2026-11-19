@@ -1,15 +1,142 @@
 # Format: file_name run file_type [triggers POT (for data only)]
+#
+# Detector-variation files can be listed for several runs (one file per type
+# per run; the run number labels the set). Each data run uses the set of its
+# own run number if there is one, and otherwise all sets; override with
+# "detVarRun DATA_RUN SOURCE [SOURCE ...]" lines, where each SOURCE is a set
+# (optionally with a weight, "31:0.4") or "pooled" (all sets). Without
+# weights the sets of a run are mixed in proportion to their detVarCV POT.
+# Sets without a detVarCVExtra file use their detVarCV as the extra CV.
+#
+# Runs 1-5 BNB samples processed with CC1mu2p0piHybrid (Pandora, Wire-Cell
+# and LANTERN trees). Run numbers: 1, 2, 3, 41-44 = Run 4a-4d, 5. The open
+# trigger data has no beam-off sample: it is listed as a run-1 beam-on file,
+# so its POT and triggers add to run 1 and the run-1 EXT is scaled to the
+# combined triggers.
+#
+# Beam-on data (file names to be filled in; triggers and POT from the
+# normalisation table)
+# BEAM_ON_RUN1.root 1 onBNB 31463613 1.414e+20
+# BEAM_ON_RUN2.root 2 onBNB 60859702 2.571e+20
+# BEAM_ON_RUN3.root 3 onBNB 60580567 2.522e+20
+# BEAM_ON_RUN4A.root 41 onBNB 9379988 4.26e+19
+# BEAM_ON_RUN4B.root 42 onBNB 31123617 1.311e+20
+# BEAM_ON_RUN4C.root 43 onBNB 20172488 8.898e+19
+# BEAM_ON_RUN4D.root 44 onBNB 11077476 4.874e+19
+# BEAM_ON_RUN5.root 5 onBNB 33739188 1.411e+20
+# BEAM_ON_OPEN_TRIGGER.root 1 onBNB 27689199 1.176e+20
+#
 # Beam-off data
-/exp/uboone/data/users/gardiner/fnal-retreat/xsec-ana-MCC9.10_Test_Samples_v10_04_07_03_Run4b_pandora_standalone_reco2_BNB_beam_off_reco2_ana_goodruns.root 4 extBNB 27868945 0
-#
-# Beam-on data
-/exp/uboone/data/users/gardiner/fnal-retreat/xsec-ana-MCC9.10_Test_Samples_v10_04_07_03_Run4b_pandora_standalone_reco2_BNB_beam_on_reco2_ana_goodruns.root 4 onBNB 9515547 3.92e19
-#
-# Dirt MC
-/exp/uboone/data/users/gardiner/fnal-retreat/xsec-ana-MCC9.10_Test_Samples_v10_04_07_04_Run4b_pandora_standalone_reco2_BNB_dirt_reco2_ana.root 4 dirtMC
-#
-# Intrinsic nue MC
-/exp/uboone/data/users/gardiner/fnal-retreat/xsec-ana-MCC9.10_Test_Samples_v10_04_07_04_Run4b_pandora_standalone_reco2_BNB_nue_overlay_reco2_ana.root 4 nueMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_20_BNB_beam_off_data_surprise_reco2_hist_1.root 1 extBNB 49551151 0
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_20_BNB_beam_off_data_surprise_reco2_hist_2.root 2 extBNB 152116269 0
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_20_BNB_beam_off_data_surprise_reco2_hist_3.root 3 extBNB 143426455 0
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_23_BNB_beam_off_retuple_retuple_hist_4a.root 41 extBNB 25415200 0
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4b_v10_04_07_20_BNB_beam_off_metapatch_retuple_retuple_hist.root 42 extBNB 84966908 0
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_23_BNB_beam_off_retuple_retuple_hist_4c.root 43 extBNB 52102363 0
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_23_BNB_beam_off_retuple_retuple_hist_4d.root 44 extBNB 73918592 0
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_23_BNB_beam_off_retuple_retuple_hist_5.root 5 extBNB 105586073 0
 #
 # numu MC
-/exp/uboone/data/users/gardiner/fnal-retreat/xsec-ana-MCC9.10_Test_Samples_v10_04_07_04_Run4b_pandora_standalone_reco2_BNB_nu_overlay_reco2_ana.root 4 numuMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_20_BNB_nu_overlay_surprise_reco2_hist_1.root 1 numuMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_20_BNB_nu_overlay_surprise_reco2_hist_2_v2.root 2 numuMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_20_BNB_nu_overlay_surprise_reco2_hist_3.root 3 numuMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_nu_overlay_retuple_retuple_hist_4a.root 41 numuMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4b_v10_04_07_20_BNB_nu_overlay_retuple_retuple_hist.root 42 numuMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_nu_overlay_retuple_retuple_hist_4c.root 43 numuMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_nu_overlay_retuple_retuple_hist_4d.root 44 numuMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_nu_overlay_retuple_retuple_hist_5.root 5 numuMC
+#
+# Intrinsic nue MC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_26_BNB_intrinsic_nue_overlay_surprise_reco2_hist_1.root 1 nueMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_26_BNB_intrinsic_nue_overlay_surprise_reco2_hist_2.root 2 nueMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_26_BNB_intrinsic_nue_overlay_surprise_reco2_hist_3.root 3 nueMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_intrinsic_nue_overlay_retuple_retuple_hist_4a.root 41 nueMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4b_v10_04_07_20_BNB_intrinsic_nue_overlay_retuple_retuple_hist.root 42 nueMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_intrinsic_nue_overlay_retuple_retuple_hist_4c.root 43 nueMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_intrinsic_nue_overlay_retuple_retuple_hist_4d.root 44 nueMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_intrinsic_nue_overlay_retuple_retuple_hist_5.root 5 nueMC
+#
+# Dirt MC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_23_BNB_dirt_overlay_surprise_reco2_hist_1.root 1 dirtMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_23_BNB_dirt_overlay_surprise_reco2_hist_2.root 2 dirtMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run123_v10_04_07_23_BNB_dirt_overlay_surprise_reco2_hist_3.root 3 dirtMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_dirt_overlay_retuple_retuple_hist_4a.root 41 dirtMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4b_v10_04_07_20_BNB_dirt_overlay_retuple_retuple_hist.root 42 dirtMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_dirt_overlay_retuple_retuple_hist_4c.root 43 dirtMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_dirt_overlay_retuple_retuple_hist_4d.root 44 dirtMC
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_MCC9.10_Run4acd5_v10_04_07_20_BNB_dirt_overlay_retuple_retuple_hist_5.root 5 dirtMC
+#
+# Detector variations (SURPRISE production; no WMdEdx samples, no Run 2 set).
+# Sets: 1 = Run 1, 31 / 32 = Run 3a / 3b, 4 = Run 4 (a single set for all
+# subruns), 5 = Run 5. Only Run 3b has a separate extra CV (the 500k sample)
+# for its SCE and Recomb2 variations; the other sets use their CV.
+#
+# Run 1
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_cv_13a_surprise_reco2_hist_1.root 1 detVarCV
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_lya_surprise_reco2_hist_1.root 1 detVarLYatten
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_lyd_surprise_reco2_hist_1.root 1 detVarLYdown
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_lyr_surprise_reco2_hist_1.root 1 detVarLYrayl
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_24_BNB_nu_overlay_recomb2_surprise_reco2_hist_1.root 1 detVarRecomb2
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_24_BNB_nu_overlay_sce_surprise_reco2_hist_1.root 1 detVarSCE
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_26_BNB_nu_overlay_WMX_surprise_reco2_hist_1.root 1 detVarWMX
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_25_BNB_nu_overlay_WMYZ_surprise_reco2_hist_1.root 1 detVarWMYZ
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_26_BNB_nu_overlay_WMthetaXZ_surprise_reco2_hist_1.root 1 detVarWMAngleXZ
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_24_BNB_nu_overlay_WMthetaYZ_surprise_v10_04_07_25_reco2_hist_1.root 1 detVarWMAngleYZ
+#
+# Run 3a
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_cv_13a_surprise_reco2_hist_3.root 31 detVarCV
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_lya_surprise_reco2_hist_3a.root 31 detVarLYatten
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_lyd_surprise_reco2_hist_3a.root 31 detVarLYdown
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_lyr_surprise_reco2_hist_3a.root 31 detVarLYrayl
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_24_BNB_nu_overlay_recomb2_surprise_reco2_hist_3a.root 31 detVarRecomb2
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_24_BNB_nu_overlay_sce_surprise_reco2_hist_3a.root 31 detVarSCE
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_26_BNB_nu_overlay_WMX_surprise_reco2_hist_3a.root 31 detVarWMX
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_25_BNB_nu_overlay_WMYZ_surprise_reco2_hist_3a.root 31 detVarWMYZ
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_26_BNB_nu_overlay_WMthetaXZ_surprise_reco2_hist_3a.root 31 detVarWMAngleXZ
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_24_BNB_nu_overlay_WMthetaYZ_surprise_v10_04_07_25_reco2_hist_3a.root 31 detVarWMAngleYZ
+#
+# Run 3b
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_cv_3b_1mil_surprise_reco2_hist.root 32 detVarCV
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_lya_surprise_reco2_hist_3b.root 32 detVarLYatten
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_lyd_surprise_reco2_hist_3b.root 32 detVarLYdown
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_lyr_surprise_reco2_hist_3b.root 32 detVarLYrayl
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_24_BNB_nu_overlay_recomb2_surprise_reco2_hist_3b.root 32 detVarRecomb2
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_24_BNB_nu_overlay_sce_surprise_reco2_hist_3b.root 32 detVarSCE
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_26_BNB_nu_overlay_WMX_surprise_reco2_hist_3b.root 32 detVarWMX
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_25_BNB_nu_overlay_WMYZ_surprise_reco2_hist_3b.root 32 detVarWMYZ
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_26_BNB_nu_overlay_WMthetaXZ_surprise_reco2_hist_3b.root 32 detVarWMAngleXZ
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run123_v10_04_07_24_BNB_nu_overlay_WMthetaYZ_surprise_v10_04_07_25_reco2_hist_3b.root 32 detVarWMAngleYZ
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_DetVar_Run123_v10_04_07_23_BNB_nu_overlay_cv_3b_500k_surprise_reco2_hist.root 32 detVarCVExtra
+#
+# Run 4 (one set for 4a-4d; no data under run 4)
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_cv_surprise_reco2_hist_4d.root 4 detVarCV
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_lya_surprise_reco2_hist_4d.root 4 detVarLYatten
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_lyd_surprise_reco2_hist_4d.root 4 detVarLYdown
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_lyr_surprise_reco2_hist_4d.root 4 detVarLYrayl
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_recomb2_surprise_reco2_hist_4d.root 4 detVarRecomb2
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_sce_surprise_reco2_hist_4d.root 4 detVarSCE
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_WMX_surprise_reco2_hist_4d.root 4 detVarWMX
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_WMYZ_surprise_reco2_hist_4d.root 4 detVarWMYZ
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_WMthetaXZ_surprise_reco2_hist_4d.root 4 detVarWMAngleXZ
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_WMthetaYZ_surprise_reco2_hist_4d.root 4 detVarWMAngleYZ
+#
+# Run 5
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-checkout_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_cv_surprise_reco2_hist_5.root 5 detVarCV
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_lya_surprise_reco2_hist_5.root 5 detVarLYatten
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_lyd_surprise_reco2_hist_5.root 5 detVarLYdown
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_lyr_surprise_reco2_hist_5.root 5 detVarLYrayl
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_recomb2_surprise_reco2_hist_5.root 5 detVarRecomb2
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_sce_surprise_reco2_hist_5.root 5 detVarSCE
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_WMX_surprise_reco2_hist_5.root 5 detVarWMX
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_WMYZ_surprise_reco2_hist_5.root 5 detVarWMYZ
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_WMthetaXZ_surprise_reco2_hist_5.root 5 detVarWMAngleXZ
+/exp/uboone/data/users/fmlopez/2p_analysis/ntuples_hybrid/xsec-ana-merge_det_DetVar_Run45_v10_04_07_19_BNB_nu_overlay_WMthetaYZ_surprise_reco2_hist_5.root 5 detVarWMAngleYZ
+#
+# Data runs and the detVar sets they use. Run 3 mixes 3a and 3b, by default in
+# proportion to their CV POT. Run 2 has no set: it uses all sets (default), or
+# map it to one, e.g. "detVarRun 2 1".
+detVarRun 3 31 32
+detVarRun 41 4
+detVarRun 42 4
+detVarRun 43 4
+detVarRun 44 4
