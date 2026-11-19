@@ -67,18 +67,18 @@ void CC1mu2p0piv2BinScheme::DefineBlocks() {
       "\\cos\\theta_{\\mu};", edges, "CC1mu2p0piv2_Selected", kOrdinaryRecoBin );
     vect_block.emplace_back( bt, br );
   }
-  // Block 3: p_lead_p (1D), 12 bins
+  // Block 3: p_lead_p (1D), 11 bins
   {
-    std::vector< double > edges = { 0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 1 };
+    std::vector< double > edges = { 0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 1 };
     Block1D* bt = new Block1D( "true_p_lead_p;GeV/c", "p_{p}^{lead};GeV/c",
       "p_{p}^{\\rm lead};GeV/c", edges, "CC1mu2p0piv2_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_p_lead_p;GeV/c", "p_{p}^{lead};GeV/c",
       "p_{p}^{\\rm lead};GeV/c", edges, "CC1mu2p0piv2_Selected", kOrdinaryRecoBin );
     vect_block.emplace_back( bt, br );
   }
-  // Block 4: cos_theta_lead_p (1D), 20 bins
+  // Block 4: cos_theta_lead_p (1D), 19 bins
   {
-    std::vector< double > edges = { -1, -0.8, -0.65, -0.5, -0.25, -0.15, 0, 0.15, 0.25, 0.35, 0.4, 0.45, 0.55, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1 };
+    std::vector< double > edges = { -1, -0.8, -0.5, -0.25, -0.15, 0, 0.15, 0.25, 0.35, 0.4, 0.45, 0.55, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1 };
     Block1D* bt = new Block1D( "true_cos_theta_lead_p;", "cos#theta_{p}^{lead};",
       "\\cos\\theta_{p}^{\\rm lead};", edges, "CC1mu2p0piv2_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_cos_theta_lead_p;", "cos#theta_{p}^{lead};",
@@ -94,9 +94,9 @@ void CC1mu2p0piv2BinScheme::DefineBlocks() {
       "p_{p}^{\\rm sub};GeV/c", edges, "CC1mu2p0piv2_Selected", kOrdinaryRecoBin );
     vect_block.emplace_back( bt, br );
   }
-  // Block 6: cos_theta_sub_p (1D), 16 bins
+  // Block 6: cos_theta_sub_p (1D), 15 bins
   {
-    std::vector< double > edges = { -1, -0.95, -0.9, -0.8, -0.6, -0.5, -0.35, -0.2, 0, 0.25, 0.4, 0.55, 0.65, 0.75, 0.85, 0.95, 1 };
+    std::vector< double > edges = { -1, -0.95, -0.9, -0.8, -0.6, -0.35, -0.2, 0, 0.25, 0.4, 0.55, 0.65, 0.75, 0.85, 0.95, 1 };
     Block1D* bt = new Block1D( "true_cos_theta_sub_p;", "cos#theta_{p}^{sub};",
       "\\cos\\theta_{p}^{\\rm sub};", edges, "CC1mu2p0piv2_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_cos_theta_sub_p;", "cos#theta_{p}^{sub};",
@@ -202,12 +202,12 @@ void CC1mu2p0piv2BinScheme::DefineBlocks() {
       "\\delta p_{T}^{\\rm lead};GeV/c", edges, "CC1mu2p0piv2_Selected", kOrdinaryRecoBin );
     vect_block.emplace_back( bt, br );
   }
-  // Block 18: cos_gamma_pp in delta_pT slices (2D), 31 bins
+  // Block 18: cos_gamma_pp in delta_pT slices (2D), 30 bins
   {
     std::map< double, std::vector< double > > slices = {
       { 0, { -1, -0.95, -0.85, -0.75, -0.4, -0.15, 0.2, 0.45, 0.75, 1 } },
       { 0.2, { -1, -0.95, -0.85, -0.75, -0.6, -0.35, -0.05, 0.15, 0.35, 0.65, 1 } },
-      { 0.4, { -1, -0.85, -0.8, -0.45, -0.25, 0.05, 0.4, 0.55, 1 } },
+      { 0.4, { -1, -0.85, -0.45, -0.25, 0.05, 0.4, 0.55, 1 } },
       { 0.6, { -1, -0.65, 0.2, 0.55, 1 } },
       { 10, {  } }
     };
@@ -217,11 +217,11 @@ void CC1mu2p0piv2BinScheme::DefineBlocks() {
       "#deltap_{T};GeV/c;cos#gamma_{pp};", "\\delta p_{T};GeV/c;\\cos\\gamma_{pp};", slices, "CC1mu2p0piv2_Selected", kOrdinaryRecoBin );
     vect_block.emplace_back( bt, br );
   }
-  // Block 19: p_sub_p in delta_pT slices (2D), 12 bins
+  // Block 19: p_sub_p in delta_pT slices (2D), 11 bins
   {
     std::map< double, std::vector< double > > slices = {
       { 0, { 0.3, 0.35, 0.4, 1 } },
-      { 0.25, { 0.3, 0.35, 0.45, 0.55, 0.6, 1 } },
+      { 0.25, { 0.3, 0.35, 0.45, 0.55, 1 } },
       { 0.5, { 0.3, 0.35, 0.45, 0.55, 1 } },
       { 10, {  } }
     };
@@ -246,11 +246,11 @@ void CC1mu2p0piv2BinScheme::DefineBlocks() {
       "#deltap_{T};GeV/c;#delta#alpha_{T};deg", "\\delta p_{T};GeV/c;\\delta\\alpha_{T};deg", slices, "CC1mu2p0piv2_Selected", kOrdinaryRecoBin );
     vect_block.emplace_back( bt, br );
   }
-  // Block 21: p_sub_p in cos_theta_sub_q slices (2D), 15 bins
+  // Block 21: p_sub_p in cos_theta_sub_q slices (2D), 14 bins
   {
     std::map< double, std::vector< double > > slices = {
       { -1, { 0.3, 0.35, 0.4, 0.45, 0.5, 1 } },
-      { -0.4, { 0.3, 0.35, 0.45, 0.55, 0.6, 1 } },
+      { -0.4, { 0.3, 0.35, 0.45, 0.55, 1 } },
       { 0.65, { 0.3, 0.35, 0.45, 0.55, 0.6, 1 } },
       { 1, {  } }
     };
@@ -260,13 +260,13 @@ void CC1mu2p0piv2BinScheme::DefineBlocks() {
       "cos#theta_{p,q}^{sub};;p_{p}^{sub};GeV/c", "\\cos\\theta_{p,q}^{\\rm sub};;p_{p}^{\\rm sub};GeV/c", slices, "CC1mu2p0piv2_Selected", kOrdinaryRecoBin );
     vect_block.emplace_back( bt, br );
   }
-  // Block 22: p_rel_cm in pn slices (2D), 18 bins
+  // Block 22: p_rel_cm in pn slices (2D), 16 bins
   {
     std::map< double, std::vector< double > > slices = {
       { 0, { 0, 0.25, 0.4, 0.5, 10 } },
       { 0.25, { 0, 0.2, 0.3, 10 } },
-      { 0.4, { 0, 0.3, 0.4, 0.45, 0.5, 10 } },
-      { 0.55, { 0, 0.2, 0.3, 0.4, 0.5, 0.55, 10 } },
+      { 0.4, { 0, 0.3, 0.45, 0.5, 10 } },
+      { 0.55, { 0, 0.2, 0.3, 0.4, 0.5, 10 } },
       { 10, {  } }
     };
     Block2D* bt = new Block2D( "true_pn;GeV/c;true_p_rel_cm;GeV/c",
