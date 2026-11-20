@@ -1,4 +1,4 @@
-# Format: file_name run file_type [triggers POT (for data only)]
+# Format: file_name run file_type [triggers POT (for data only) [scale (beam-on only: factor for the event counts, e.g. fake data at another exposure)]]
 #
 # Detector-variation files can be listed for several runs (one file per type
 # per run; the run number labels the set). Each data run uses the set of its

@@ -122,14 +122,18 @@ class FilePropertiesManager {
     }
 
     // Simple container that stores the number of triggers and the POT exposure
-    // represented by a particular data ntuple
+    // represented by a particular data ntuple, plus an optional scale factor
+    // for the event counts of a beam-on (fake) data file (e.g. a simulated
+    // sample standing in for data at another exposure: the POT is then the
+    // exposure the scaled counts represent)
     struct TriggersAndPOT {
       inline TriggersAndPOT() {}
-      inline TriggersAndPOT( int trig, double pot )
-        : trigger_count_( trig ), pot_( pot ) {}
+      inline TriggersAndPOT( int trig, double pot, double scale = 1. )
+        : trigger_count_( trig ), pot_( pot ), scale_( scale ) {}
 
       int trigger_count_ = 0;
       double pot_ = 0.;
+      double scale_ = 1.;
     };
 
     inline const std::map< std::string, TriggersAndPOT >& data_norm_map() const
@@ -338,8 +342,17 @@ class FilePropertiesManager {
           double pot;
           temp_ss >> trigs >> pot;
 
+          // Optional sixth column for beam-on files: a scale factor applied
+          // to the file's event counts (and, for fake data, to its truth)
+          double scale = 1.;
+          if ( type == NtupleFileType::kOnBNB && !( temp_ss >> scale ) ) {
+            scale = 1.;
+          }
+          if ( !( scale > 0. ) ) throw std::runtime_error( "Invalid data scale"
+            " factor for " + file_name );
+
           // Store this information in the normalization map
-          data_norm_map_[ file_name ] = TriggersAndPOT( trigs, pot );
+          data_norm_map_[ file_name ] = TriggersAndPOT( trigs, pot, scale );
         }
       }
     }

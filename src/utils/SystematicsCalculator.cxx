@@ -635,6 +635,10 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
         // value of this flag will be reconsidered below.
         bool is_fake_data = false;
 
+        // Scale factor for the event counts of a beam-on (fake) data file
+        // (optional sixth column of its file properties line; 1 otherwise)
+        double data_scale = 1.;
+
         // Get the simulated or measured POT belonging to the current file.
         // This will be used to normalize the relevant histograms
         double file_pot = 0.;
@@ -674,6 +678,16 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
 
           const std::string reco_hist2d_name = (dataContainsWeightedCV ? CV_UNIV_NAME : "unweighted") + "_0_reco2d";
           auto reco_hist2d = get_object_unique_ptr<TH2D>(reco_hist2d_name.c_str(), *subdir);
+
+          if ( type == NFT::kOnBNB ) {
+            data_scale = fpm.data_norm_map().at( file_name ).scale_;
+            if ( data_scale != 1. ) {
+              std::cout << "Scaling the beam-on data counts of " << file_name
+                << " by " << data_scale << '\n';
+              reco_hist->Scale( data_scale );
+              reco_hist2d->Scale( data_scale );
+            }
+          }
 
           // If we're working with EXT data, scale it to the corresponding
           // number of triggers from the BNB data from the same run
@@ -826,12 +840,13 @@ void SystematicsCalculator::build_universes( TDirectoryFile& root_tdir ) {
 
           // Add their contributions to the owned histograms for the
           // current Universe object
-          fake_data_universe_->hist_reco_->Add( h_reco.get() );
-          fake_data_universe_->hist_true_->Add( h_true.get() );
-          fake_data_universe_->hist_2d_->Add( h_2d.get() );
-          fake_data_universe_->hist_categ_->Add( h_categ.get() );
-          fake_data_universe_->hist_reco2d_->Add( h_reco2d.get() );
-          fake_data_universe_->hist_true2d_->Add( h_true2d.get() );
+          // (scaled as the data counts, see the sixth file properties column)
+          fake_data_universe_->hist_reco_->Add( h_reco.get(), data_scale );
+          fake_data_universe_->hist_true_->Add( h_true.get(), data_scale );
+          fake_data_universe_->hist_2d_->Add( h_2d.get(), data_scale );
+          fake_data_universe_->hist_categ_->Add( h_categ.get(), data_scale );
+          fake_data_universe_->hist_reco2d_->Add( h_reco2d.get(), data_scale );
+          fake_data_universe_->hist_true2d_->Add( h_true2d.get(), data_scale );
 
         } // fake data sample
 
