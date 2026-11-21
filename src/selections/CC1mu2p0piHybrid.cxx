@@ -36,17 +36,18 @@ namespace {
   constexpr double P_VOTE_HIP_FRAC_MIN = 0.4;
 
   // ---- Wire-Cell vote: numu_score above this value, a primary muon with
-  // p >= MUON_P_MIN, the two hardest primary protons with p2 >= WC_P2_MIN
-  // and p1 <= PROTON_P_MAX, any third primary proton below WC_P3_MAX, no
-  // primary charged pion, Wire-Cell vertex in the fiducial volume
+  // p >= MUON_P_MIN, exactly two primary protons in the proton window (the
+  // two hardest in [PROTON_P_MIN, PROTON_P_MAX], any third below
+  // PROTON_P_MIN), no primary charged pion, Wire-Cell vertex in the
+  // fiducial volume
   constexpr double WC_NUMU_SCORE_MIN = 0.0;
-  constexpr double WC_P2_MIN = 0.26; // GeV/c
-  constexpr double WC_P3_MAX = 0.25; // GeV/c
 
   // ---- LANTERN vote: exactly one muon-like and two proton-like primary
   // tracks within L_ATTACH_DIST of the vertex (after merging duplicate
   // prongs), no pion-like track, no primary e/gamma shower above
-  // L_SHOWER_E_MAX, vertex in the fiducial volume
+  // L_SHOWER_E_MAX, vertex in the fiducial volume. Protons are counted in
+  // the proton window on the LANTERN (trackRecoE) momentum, as are the
+  // assigned kinematics
   constexpr double L_ATTACH_DIST = 4.0; // cm, nearer track end to the vertex
   constexpr double L_MERGE_ANGLE = 25.; // deg, duplicate prongs
   constexpr double L_MU_PROB_MIN = 0.5; // LArPID muon probability
@@ -54,9 +55,6 @@ namespace {
   constexpr double L_PI_KE_MIN = 0.0; // MeV, pion-like tracks above this veto
   constexpr double L_PI_PROB_MIN = 0.5; // LArPID pion probability
   constexpr double L_SHOWER_E_MAX = 50.; // MeV
-  // The proton momentum window of the vote uses trackRecoE scaled by this
-  // factor (tuned); the kinematics use the unscaled energy
-  constexpr double L_KE_SCALE_WINDOW = 1.1;
 
   // ---- Kinematic assignment: a particle of another reconstruction is the
   // same particle if its direction is within this angle
@@ -167,8 +165,8 @@ bool CC1mu2p0piHybrid::is_selected( AnalysisEvent& ev ) {
   bool wc_is_fc = get< bool >( ev.in( WC_EVAL_TREE ), "match_isFC" );
 
   bool vote_W = wc_score > WC_NUMU_SCORE_MIN && wc_has_mu
-    && wc_p3mu.Mag() >= MUON_P_MIN && wc_pmag( 1 ) >= WC_P2_MIN
-    && wc_pmag( 0 ) <= PROTON_P_MAX && wc_pmag( 2 ) < WC_P3_MAX && wc_in_fv
+    && wc_p3mu.Mag() >= MUON_P_MIN && wc_pmag( 1 ) >= PROTON_P_MIN
+    && wc_pmag( 0 ) <= PROTON_P_MAX && wc_pmag( 2 ) < PROTON_P_MIN && wc_in_fv
     && wc_n_pi == 0;
 
   // ------------------------------------------------------------ LANTERN vote
@@ -252,16 +250,15 @@ bool CC1mu2p0piHybrid::is_selected( AnalysisEvent& ev ) {
   const double ke_p_hi = 1e3 * ke_of_p( PROTON_P_MAX, PROTON_MASS );
   int lt_n_mu = 0, lt_n_p = 0, lt_n_p_hi = 0, lt_n_pi = 0, lt_n_shw = 0;
   int lt_mu_idx = -1;
-  std::vector< std::pair< double, size_t > > lt_protons; // (unscaled p, index)
+  std::vector< std::pair< double, size_t > > lt_protons; // (p, index)
   for ( size_t i = 0; i < n_lt; ++i ) {
     double ke = elem( t_E, i );
     if ( pi_like[ i ] ) ++lt_n_pi;
     if ( drop[ i ] ) continue;
     if ( is_mu[ i ] && ke >= ke_mu_min ) { ++lt_n_mu; lt_mu_idx = static_cast< int >( i ); }
     if ( is_p[ i ] ) {
-      double ke_w = ke * L_KE_SCALE_WINDOW;
-      if ( ke_w > ke_p_hi ) ++lt_n_p_hi;
-      else if ( ke_w >= ke_p_lo ) {
+      if ( ke > ke_p_hi ) ++lt_n_p_hi;
+      else if ( ke >= ke_p_lo ) {
         ++lt_n_p;
         lt_protons.emplace_back( p_of_ke( ke / 1e3, PROTON_MASS ), i );
       }
