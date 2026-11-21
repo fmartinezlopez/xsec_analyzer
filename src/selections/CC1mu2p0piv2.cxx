@@ -710,6 +710,76 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
     sub_p_start_dist = track_start_distance->at( sub_p_candidate_idx );
   }
 
+
+  // Sideband topologies, for background constraints. Every direct neutrino
+  // daughter other than the muon candidate is classified with the cuts of
+  // this selection: a shower (track score <= TRACK_SCORE_CUT), a bad track
+  // (no valid length), or a track; a track is a good proton if contained,
+  // NuGraph2 HIP fraction >= PROTON_NG2_HIP_FRAC_MIN, without descendants
+  // and with range-based p in the proton window; it is pion-like if it
+  // fails the HIP requirement, carries the NuGraph2 MIP label and starts
+  // within PROTON_VTX_DIST_NEAR of the vertex. All sidebands need the
+  // selection's muon, no shower or bad track, and good protons near the
+  // vertex as in the selection. Their kinematics (sb_* branches) use the
+  // muon and the two "protons" of the topology: the two good protons (3p:
+  // the hardest two; one good proton and a pion: both, the pion taken as a
+  // proton), or the single good proton.
+  bool sb_muon_ok = sel_nu_mu_cc && sel_muon_passed_mom_cuts
+    && sel_muon_quality_if_contained && sel_muon_ng2_mip;
+  int sb_n_trk = 0, sb_n_bad = 0, sb_n_shw = 0;
+  std::vector< std::pair< float, int > > sb_good, sb_pion; // (p, PFP index)
+  float sb_sd_min = 1e9, sb_sd_max = -1e9;
+  for ( int p = 0; p < num_pfps; ++p ) {
+    if ( gen_vec->at( p ) != 2u || p == muon_candidate_idx ) continue;
+    float ts = track_score->at( p );
+    if ( ts <= TRACK_SCORE_CUT ) { ++sb_n_shw; continue; }
+    if ( !( ts > TRACK_SCORE_CUT ) ) continue;
+    if ( !( track_length->at( p ) > 0. ) ) { ++sb_n_bad; continue; }
+    ++sb_n_trk;
+    bool cont = pcv.is_inside( track_end_x->at( p ), track_end_y->at( p ),
+      track_end_z->at( p ) );
+    float hip = ng2_ok( p ) ? ng2_hipfrac->at( p ) : -1.f;
+    int sem = ng2_ok( p ) ? ng2_semlabel->at( p ) : BOGUS_INDEX;
+    float KEp = track_KE_proton->at( p );
+    float p_mom = real_sqrt( KEp*KEp + 2.*PROTON_MASS*KEp );
+    float sd = track_start_distance->at( p );
+    bool proton_like = cont && hip >= PROTON_NG2_HIP_FRAC_MIN
+      && pfp_n_desc->at( p ) == 0u;
+    if ( proton_like && p_mom >= PROTON_P_MIN && p_mom <= PROTON_P_MAX ) {
+      sb_good.emplace_back( p_mom, p );
+      if ( std::isfinite( sd ) ) {
+        sb_sd_min = std::min( sb_sd_min, sd );
+        sb_sd_max = std::max( sb_sd_max, sd );
+      }
+    }
+    if ( hip < PROTON_NG2_HIP_FRAC_MIN && sem == NG2_MIP_LABEL
+      && sd < PROTON_VTX_DIST_NEAR ) sb_pion.emplace_back( p_mom, p );
+  }
+  int sb_n_good = sb_good.size(), sb_n_pion = sb_pion.size();
+  bool sb_clean = sb_muon_ok && sb_n_bad == 0 && sb_n_shw == 0
+    && sb_sd_min < PROTON_VTX_DIST_NEAR && sb_sd_max < PROTON_VTX_DIST_FAR;
+  bool sb_3p = sb_clean && sb_n_trk == 3 && sb_n_good == 3;
+  bool sb_npi = sb_clean && sb_n_pion == 1
+    && ( ( sb_n_trk == 2 && sb_n_good == 1 ) || ( sb_n_trk == 3 && sb_n_good == 2 ) );
+  bool sb_1p = sb_clean && sb_n_trk == 1 && sb_n_good == 1;
+
+  auto by_mom = []( const auto& a, const auto& b ) { return a.first > b.first; };
+  std::vector< std::pair< float, int > > sb_prot = sb_good;
+  if ( sb_npi && sb_n_good == 1 ) sb_prot.push_back( sb_pion.front() );
+  std::stable_sort( sb_prot.begin(), sb_prot.end(), by_mom );
+  TVector3 sb_p3[ 2 ];
+  for ( size_t r = 0; r < 2u && r < sb_prot.size(); ++r ) {
+    sb_p3[ r ] = get_reco_p3_proton( sb_prot.at( r ).second, sb_prot.at( r ).first );
+  }
+  bool sb_two = muon && ( sb_3p || sb_npi );
+  fill_observables( out, sb_two, p3mu, sb_p3[ 0 ], sb_p3[ 1 ], "sb_",
+    muon && sb_1p );
+  out[ "sb_topo_3p" ] = sb_3p;
+  out[ "sb_topo_npi" ] = sb_npi;
+  out[ "sb_topo_1p" ] = sb_1p;
+  out[ "sb_n_good_p" ] = sb_n_good;
+  out[ "sb_n_pion" ] = sb_n_pion;
+
   // We're done, store the results in the output tree and return
   // the boolean flag indicating whether the full selection was passed or not
   out[ "reco_vertex_in_FV" ] = sel_reco_vertex_in_FV;
@@ -777,13 +847,16 @@ bool CC1mu2p0piv2::is_selected( AnalysisEvent& ev ) {
   pd_.p3_lead_p = p3_lead_p;
   pd_.p3_sub_p = p3_sub_p;
   if ( pd_.has_p3 ) pd_.cos_gamma_pp = std::cos( p3_lead_p.Angle( p3_sub_p ) );
+  pd_.sb_3p = sb_3p;
+  pd_.sb_npi = sb_npi;
+  pd_.sb_1p = sb_1p;
 
   return sel_CC2p0pi;
 }
 
 void CC1mu2p0piv2::fill_observables( TreeMap::Wrapper& out, bool ok,
-  const TVector3& p3mu, const TVector3& p3_lead_p, const TVector3& p3_sub_p )
-  const
+  const TVector3& p3mu, const TVector3& p3_lead_p, const TVector3& p3_sub_p,
+  const std::string& prefix, bool lead_only_ok ) const
 {
   // Compute reco observables if we have a muon candidate and both a leading
   // and a subleading proton candidate in the event
@@ -911,57 +984,74 @@ void CC1mu2p0piv2::fill_observables( TreeMap::Wrapper& out, bool ok,
     cos_theta_sub_q = std::cos( p3_sub_p.Angle( q3_vec ) );
     cos_theta_pp_q = std::cos( p3_pp.Angle( q3_vec ) );
   }
+  else if ( lead_only_ok ) {
+    // Muon and leading proton only (e.g., a one-proton sideband)
+    p_mu = p3mu.Mag();
+    cos_theta_mu = p3mu.CosTheta();
+    p_lead_p = p3_lead_p.Mag();
+    cos_theta_lead_p = p3_lead_p.CosTheta();
+    cos_theta_mu_lead_p = std::cos( p3mu.Angle( p3_lead_p ) );
 
-  out[ "reco_p_mu" ] = p_mu;
-  out[ "reco_cos_theta_mu" ] = cos_theta_mu;
-  out[ "reco_p_lead_p" ] = p_lead_p;
-  out[ "reco_cos_theta_lead_p" ] = cos_theta_lead_p;
-  out[ "reco_p_sub_p" ] = p_sub_p;
-  out[ "reco_cos_theta_sub_p" ] = cos_theta_sub_p;
-  out[ "reco_cos_theta_mu_lead_p" ] = cos_theta_mu_lead_p;
-  out[ "reco_cos_theta_mu_sub_p" ] = cos_theta_mu_sub_p;
+    KICalculator ki_calc_lead( p3mu, p3_lead_p, ki_calc_type_ );
+    lead_delta_pT = ki_calc_lead.pT();
+    lead_delta_phiT = ki_calc_lead.delta_phiT();
+    lead_delta_alphaT = ki_calc_lead.delta_alphaT();
+    lead_delta_pTx = ki_calc_lead.pTx();
+    lead_delta_pTy = ki_calc_lead.pTy();
+    lead_delta_pL = ki_calc_lead.pL();
+    lead_pn = ki_calc_lead.pn();
+  }
 
-  out[ "reco_cos_gamma_pp" ] = cos_gamma_pp;
-  out[ "reco_p_pp" ] = p_pp;
-  out[ "reco_cos_theta_pp" ] = cos_theta_pp;
-  out[ "reco_theta_mu_pp" ] = theta_mu_pp;
-  out[ "reco_p_rel" ] = p_rel;
-  out[ "reco_p_rel_cm" ] = p_rel_cm;
-  out[ "reco_m_pp" ] = m_pp;
-  out[ "reco_T_pp" ] = T_pp;
-  out[ "reco_T_asym_pp" ] = T_asym_pp;
+  out[ prefix + "p_mu" ] = p_mu;
+  out[ prefix + "cos_theta_mu" ] = cos_theta_mu;
+  out[ prefix + "p_lead_p" ] = p_lead_p;
+  out[ prefix + "cos_theta_lead_p" ] = cos_theta_lead_p;
+  out[ prefix + "p_sub_p" ] = p_sub_p;
+  out[ prefix + "cos_theta_sub_p" ] = cos_theta_sub_p;
+  out[ prefix + "cos_theta_mu_lead_p" ] = cos_theta_mu_lead_p;
+  out[ prefix + "cos_theta_mu_sub_p" ] = cos_theta_mu_sub_p;
 
-  out[ "reco_delta_pT" ] = delta_pT;
-  out[ "reco_delta_phiT" ] = delta_phiT;
-  out[ "reco_delta_alphaT" ] = delta_alphaT;
-  out[ "reco_delta_pTx" ] = delta_pTx;
-  out[ "reco_delta_pTy" ] = delta_pTy;
-  out[ "reco_delta_pL" ] = delta_pL;
-  out[ "reco_pn" ] = pn;
-  out[ "reco_p_miss_minus" ] = p_miss_minus;
+  out[ prefix + "cos_gamma_pp" ] = cos_gamma_pp;
+  out[ prefix + "p_pp" ] = p_pp;
+  out[ prefix + "cos_theta_pp" ] = cos_theta_pp;
+  out[ prefix + "theta_mu_pp" ] = theta_mu_pp;
+  out[ prefix + "p_rel" ] = p_rel;
+  out[ prefix + "p_rel_cm" ] = p_rel_cm;
+  out[ prefix + "m_pp" ] = m_pp;
+  out[ prefix + "T_pp" ] = T_pp;
+  out[ prefix + "T_asym_pp" ] = T_asym_pp;
 
-  out[ "reco_lead_delta_pT" ] = lead_delta_pT;
-  out[ "reco_lead_delta_phiT" ] = lead_delta_phiT;
-  out[ "reco_lead_delta_alphaT" ] = lead_delta_alphaT;
-  out[ "reco_lead_delta_pTx" ] = lead_delta_pTx;
-  out[ "reco_lead_delta_pTy" ] = lead_delta_pTy;
-  out[ "reco_lead_delta_pL" ] = lead_delta_pL;
-  out[ "reco_lead_pn" ] = lead_pn;
+  out[ prefix + "delta_pT" ] = delta_pT;
+  out[ prefix + "delta_phiT" ] = delta_phiT;
+  out[ prefix + "delta_alphaT" ] = delta_alphaT;
+  out[ prefix + "delta_pTx" ] = delta_pTx;
+  out[ prefix + "delta_pTy" ] = delta_pTy;
+  out[ prefix + "delta_pL" ] = delta_pL;
+  out[ prefix + "pn" ] = pn;
+  out[ prefix + "p_miss_minus" ] = p_miss_minus;
 
-  out[ "reco_Ecal" ] = Ecal;
-  out[ "reco_E_QE" ] = E_QE;
-  out[ "reco_q0" ] = q0;
-  out[ "reco_q3" ] = q3;
-  out[ "reco_Q2" ] = Q2;
-  out[ "reco_p_init_lead" ] = p_init_lead;
-  out[ "reco_cos_theta_pinit_sub" ] = cos_theta_pinit_sub;
-  out[ "reco_cos_theta_lead_q" ] = cos_theta_lead_q;
-  out[ "reco_cos_theta_sub_q" ] = cos_theta_sub_q;
-  out[ "reco_cos_theta_pp_q" ] = cos_theta_pp_q;
+  out[ prefix + "lead_delta_pT" ] = lead_delta_pT;
+  out[ prefix + "lead_delta_phiT" ] = lead_delta_phiT;
+  out[ prefix + "lead_delta_alphaT" ] = lead_delta_alphaT;
+  out[ prefix + "lead_delta_pTx" ] = lead_delta_pTx;
+  out[ prefix + "lead_delta_pTy" ] = lead_delta_pTy;
+  out[ prefix + "lead_delta_pL" ] = lead_delta_pL;
+  out[ prefix + "lead_pn" ] = lead_pn;
 
-  out[ "reco_p3_mu" ] = p3mu;
-  out[ "reco_p3_lead_p" ] = p3_lead_p;
-  out[ "reco_p3_sub_p" ] = p3_sub_p;
+  out[ prefix + "Ecal" ] = Ecal;
+  out[ prefix + "E_QE" ] = E_QE;
+  out[ prefix + "q0" ] = q0;
+  out[ prefix + "q3" ] = q3;
+  out[ prefix + "Q2" ] = Q2;
+  out[ prefix + "p_init_lead" ] = p_init_lead;
+  out[ prefix + "cos_theta_pinit_sub" ] = cos_theta_pinit_sub;
+  out[ prefix + "cos_theta_lead_q" ] = cos_theta_lead_q;
+  out[ prefix + "cos_theta_sub_q" ] = cos_theta_sub_q;
+  out[ prefix + "cos_theta_pp_q" ] = cos_theta_pp_q;
+
+  out[ prefix + "p3_mu" ] = p3mu;
+  out[ prefix + "p3_lead_p" ] = p3_lead_p;
+  out[ prefix + "p3_sub_p" ] = p3_sub_p;
 }
 
 std::string CC1mu2p0piv2::categorize_event( AnalysisEvent& ev ) {

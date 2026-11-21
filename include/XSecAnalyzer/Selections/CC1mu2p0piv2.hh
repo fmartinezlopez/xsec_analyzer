@@ -45,14 +45,22 @@ protected:
     bool has_p3 = false;
     bool has_lead_p = false, has_sub_p = false;
     TVector3 p3mu, p3_lead_p, p3_sub_p;
+    // Sideband topologies (see is_selected): the selection's muon plus
+    // exactly three good protons (sb_3p), one or two good protons and one
+    // pion-like track at the vertex (sb_npi), or exactly one good proton
+    // (sb_1p), with no showers or other direct daughters
+    bool sb_3p = false, sb_npi = false, sb_1p = false;
   };
   PandoraResult pd_;
 
   // Computes the reco observables from the muon, leading and subleading
-  // proton 3-momenta and stores them in the output tree (reco_* branches).
-  // If ok is false, all observables are set to BOGUS.
+  // proton 3-momenta and stores them in the output tree (branches named
+  // prefix + observable). If ok is false, all observables are set to BOGUS,
+  // except, if lead_only_ok is true, those of the muon and the leading
+  // proton alone (single-particle and leading-proton imbalance variables).
   void fill_observables( TreeMap::Wrapper& out, bool ok, const TVector3& p3mu,
-    const TVector3& p3_lead_p, const TVector3& p3_sub_p ) const;
+    const TVector3& p3_lead_p, const TVector3& p3_sub_p,
+    const std::string& prefix = "reco_", bool lead_only_ok = false ) const;
 
   KICalculator::CalcType ki_calc_type_;
 };

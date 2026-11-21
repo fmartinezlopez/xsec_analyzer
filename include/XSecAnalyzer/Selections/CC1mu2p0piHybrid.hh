@@ -18,4 +18,11 @@ public:
   CC1mu2p0piHybrid();
 
   virtual bool is_selected( AnalysisEvent& ev ) override final;
+
+  // Events in one of the sidebands are also kept by ProcessNTuples
+  virtual bool last_keep_extra() const override { return in_sideband_; }
+
+private:
+
+  bool in_sideband_ = false;
 };

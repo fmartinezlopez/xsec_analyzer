@@ -42,6 +42,9 @@ public:
   // Used by ProcessNTuples to decide which events to keep in its output.
   inline bool last_selected() const { return last_selected_; }
   inline bool last_mc_signal() const { return last_mc_signal_; }
+  // Whether the most recent event should also be kept although it is
+  // neither selected nor signal (e.g., it falls in a sideband)
+  virtual bool last_keep_extra() const { return false; }
 
   const CategoryMap& category_map() const;
   const TreeNameSet& input_tree_names() const;

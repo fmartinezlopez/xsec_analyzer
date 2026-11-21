@@ -446,7 +446,8 @@ int main( int argc, char* argv[] ) {
       AnalysisEvent ev = th.get_event( sel->input_tree_names(), sel->name() );
       sel->apply_selection( is_mc, ev );
 
-      keep = keep || sel->last_selected() || ( is_mc && sel->last_mc_signal() );
+      keep = keep || sel->last_selected() || ( is_mc && sel->last_mc_signal() )
+        || sel->last_keep_extra();
     }
 
     // We're done. Save the results (if requested) and move on to the next

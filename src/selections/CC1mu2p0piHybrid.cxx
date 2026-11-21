@@ -350,6 +350,24 @@ bool CC1mu2p0piHybrid::is_selected( AnalysisEvent& ev ) {
     out[ "reco_p3_p_vec" ] = std::vector< TVector3 >{ k_lead, k_sub };
   }
 
+  // Sidebands for background constraints, disjoint from the selection and
+  // from each other: the Pandora topologies of CC1mu2p0piv2 (CC0pi >= 3p,
+  // CC Npi, and CC0pi 1p). The 1p sideband also vetoes events in which
+  // Wire-Cell or LANTERN finds a second proton in or above the proton
+  // window (as counted in their votes), i.e., signal with a proton that
+  // Pandora missed. Sideband codes: 0 none, 1 3p, 2 Npi, 3 1p.
+  bool sb_veto_1p = wc_pmag( 1 ) >= PROTON_P_MIN || lt_n_p + lt_n_p_hi >= 2;
+  bool sb_3p = pd_.sb_3p && !selected;
+  bool sb_npi = pd_.sb_npi && !selected;
+  bool sb_1p = pd_.sb_1p && !sb_veto_1p && !selected;
+  int sideband = sb_3p ? 1 : sb_npi ? 2 : sb_1p ? 3 : 0;
+  in_sideband_ = sideband > 0;
+  out[ "sideband_3p" ] = sb_3p;
+  out[ "sideband_npi" ] = sb_npi;
+  out[ "sideband_1p" ] = sb_1p;
+  out[ "sideband" ] = sideband;
+  out[ "sb_veto_1p" ] = sb_veto_1p;
+
   out[ "vote_pandora" ] = vote_P;
   out[ "vote_wirecell" ] = vote_W;
   out[ "vote_lantern" ] = vote_L;
