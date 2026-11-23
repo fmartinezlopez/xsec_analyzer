@@ -10,7 +10,8 @@
 // one TTree per selection, plus an entry-aligned XSecAnalyzer/weights TTree
 // holding is_mc, event IDs, the CV weight and the flattened systematic weight
 // map. By default only events that are selected, or that are true signal (MC),
-// for at least one requested selection are written; use --keep-all to write
+// or that a selection asks to keep (e.g. its background sidebands), for at
+// least one requested selection are written; use --keep-all to write
 // every processed event. --no-syst-weights omits the systematic weight
 // branches (weight_<name>), keeping only the CV weights (the scalar
 // weightSplineTimesTune and the spline, tune and PPFX CV weight branches).
@@ -209,9 +210,9 @@ int main( int argc, char* argv[] ) {
     std::cout << "Usage: " << argv[0]
       << " INPUT_NTUPLE_FILE FILE_TYPE SELECTION_NAMES OUTPUT_FILE"
       << " [--keep-all] [--no-syst-weights] [--tree-suffix SUFFIX]\n"
-      << "  By default only events that are selected, or true signal (MC),"
-      << " for at least one\n  selection are written. --keep-all writes every"
-      << " processed event.\n  --no-syst-weights keeps only the CV weights"
+      << "  By default only events that are selected, true signal (MC) or in"
+      << " a selection's\n  sidebands, for at least one selection, are written."
+      << " --keep-all writes\n  every processed event. --no-syst-weights keeps only the CV weights"
       << " (weightSplineTimesTune and the\n  spline, tune and PPFX CV weight"
       << " branches), e.g. for detector-variation samples.\n"
       << "  --tree-suffix SUFFIX reads each input TTree as <dir>/<tree>SUFFIX,"
@@ -236,7 +237,7 @@ int main( int argc, char* argv[] ) {
   std::cout << "\tinput_file_type: " << file_type << '\n';
   std::cout << "\toutput_file_name: " << output_file_name << '\n';
   std::cout << "\tkeep: " << ( keep_all ? "all events"
-    : "selected or true-signal events only" ) << '\n';
+    : "selected, true-signal (MC) or sideband events" ) << '\n';
   std::cout << "\tsystematic weights: " << ( syst_weights ? "yes" : "no (CV weights only)" )
     << '\n';
   std::cout << "\tinput TTree suffix: " << ( tree_suffix.empty()
