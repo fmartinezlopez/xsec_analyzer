@@ -5,7 +5,10 @@
 // signal reconstructed in the correct bin) >= 0.50 in every bin, and
 // >= 50 expected selected signal events per bin at 1.30e+21 POT.
 // For 2D blocks the diagonal refers to the full 2D bin. Unbounded variables
-// use an open-ended last bin (upper edge 10).
+// use an open last bin (upper edge 1000; 10 in the binning file), and the
+// last bin of a bounded variable includes its upper limit (cos <= 1, proton
+// p <= 1 GeV/c, written as limit + 0.001), so that every selected event
+// fills a bin of every block.
 
 // Standard library includes
 #include <map>
@@ -42,7 +45,7 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
 
   // Block 0: total: single bin over the full signal phase space (p_mu >= 0.1 GeV/c)
   {
-    std::vector< double > edges = { 0.1, 10 };
+    std::vector< double > edges = { 0.1, 1000 };
     Block1D* bt = new Block1D( "true_p_mu;GeV/c", "p_{#mu};GeV/c",
       "p_{\\mu};GeV/c", edges, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_p_mu;GeV/c", "p_{#mu};GeV/c",
@@ -51,7 +54,7 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   }
   // Block 1: p_mu (1D), 11 bins
   {
-    std::vector< double > edges = { 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5, 0.6, 0.9, 1.15, 10 };
+    std::vector< double > edges = { 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5, 0.6, 0.9, 1.15, 1000 };
     Block1D* bt = new Block1D( "true_p_mu;GeV/c", "p_{#mu};GeV/c",
       "p_{\\mu};GeV/c", edges, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_p_mu;GeV/c", "p_{#mu};GeV/c",
@@ -60,7 +63,7 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   }
   // Block 2: cos_theta_mu (1D), 22 bins
   {
-    std::vector< double > edges = { -1, -0.75, -0.6, -0.5, -0.4, -0.25, -0.15, 0, 0.1, 0.2, 0.25, 0.35, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1 };
+    std::vector< double > edges = { -1, -0.75, -0.6, -0.5, -0.4, -0.25, -0.15, 0, 0.1, 0.2, 0.25, 0.35, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.001 };
     Block1D* bt = new Block1D( "true_cos_theta_mu;", "cos#theta_{#mu};",
       "\\cos\\theta_{\\mu};", edges, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_cos_theta_mu;", "cos#theta_{#mu};",
@@ -69,7 +72,7 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   }
   // Block 3: p_lead_p (1D), 9 bins
   {
-    std::vector< double > edges = { 0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 1 };
+    std::vector< double > edges = { 0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 1.001 };
     Block1D* bt = new Block1D( "true_p_lead_p;GeV/c", "p_{p}^{lead};GeV/c",
       "p_{p}^{\\rm lead};GeV/c", edges, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_p_lead_p;GeV/c", "p_{p}^{lead};GeV/c",
@@ -78,7 +81,7 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   }
   // Block 4: cos_theta_lead_p (1D), 19 bins
   {
-    std::vector< double > edges = { -1, -0.8, -0.6, -0.5, -0.35, -0.25, -0.15, 0, 0.1, 0.25, 0.35, 0.45, 0.55, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1 };
+    std::vector< double > edges = { -1, -0.8, -0.6, -0.5, -0.35, -0.25, -0.15, 0, 0.1, 0.25, 0.35, 0.45, 0.55, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.001 };
     Block1D* bt = new Block1D( "true_cos_theta_lead_p;", "cos#theta_{p}^{lead};",
       "\\cos\\theta_{p}^{\\rm lead};", edges, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_cos_theta_lead_p;", "cos#theta_{p}^{lead};",
@@ -87,7 +90,7 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   }
   // Block 5: p_sub_p (1D), 6 bins
   {
-    std::vector< double > edges = { 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 1 };
+    std::vector< double > edges = { 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 1.001 };
     Block1D* bt = new Block1D( "true_p_sub_p;GeV/c", "p_{p}^{sub};GeV/c",
       "p_{p}^{\\rm sub};GeV/c", edges, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_p_sub_p;GeV/c", "p_{p}^{sub};GeV/c",
@@ -96,7 +99,7 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   }
   // Block 6: cos_theta_sub_p (1D), 15 bins
   {
-    std::vector< double > edges = { -1, -0.9, -0.8, -0.6, -0.5, -0.35, -0.2, 0, 0.25, 0.4, 0.55, 0.65, 0.75, 0.85, 0.95, 1 };
+    std::vector< double > edges = { -1, -0.9, -0.8, -0.6, -0.5, -0.35, -0.2, 0, 0.25, 0.4, 0.55, 0.65, 0.75, 0.85, 0.95, 1.001 };
     Block1D* bt = new Block1D( "true_cos_theta_sub_p;", "cos#theta_{p}^{sub};",
       "\\cos\\theta_{p}^{\\rm sub};", edges, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_cos_theta_sub_p;", "cos#theta_{p}^{sub};",
@@ -105,7 +108,7 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   }
   // Block 7: delta_pT (1D), 7 bins
   {
-    std::vector< double > edges = { 0, 0.15, 0.25, 0.35, 0.5, 0.65, 0.8, 10 };
+    std::vector< double > edges = { 0, 0.15, 0.25, 0.35, 0.5, 0.65, 0.8, 1000 };
     Block1D* bt = new Block1D( "true_delta_pT;GeV/c", "#deltap_{T};GeV/c",
       "\\delta p_{T};GeV/c", edges, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_delta_pT;GeV/c", "#deltap_{T};GeV/c",
@@ -114,7 +117,7 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   }
   // Block 8: pn (1D), 7 bins
   {
-    std::vector< double > edges = { 0, 0.2, 0.3, 0.4, 0.5, 0.65, 0.8, 10 };
+    std::vector< double > edges = { 0, 0.2, 0.3, 0.4, 0.5, 0.65, 0.8, 1000 };
     Block1D* bt = new Block1D( "true_pn;GeV/c", "p_{n};GeV/c",
       "p_{n};GeV/c", edges, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_pn;GeV/c", "p_{n};GeV/c",
@@ -123,7 +126,7 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   }
   // Block 9: cos_gamma_pp (1D), 15 bins
   {
-    std::vector< double > edges = { -1, -0.95, -0.85, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.5, 0.65, 0.75, 0.85, 1 };
+    std::vector< double > edges = { -1, -0.95, -0.85, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.5, 0.65, 0.75, 0.85, 1.001 };
     Block1D* bt = new Block1D( "true_cos_gamma_pp;", "cos#gamma_{pp};",
       "\\cos\\gamma_{pp};", edges, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_cos_gamma_pp;", "cos#gamma_{pp};",
@@ -132,7 +135,7 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   }
   // Block 10: p_rel_cm (1D), 9 bins
   {
-    std::vector< double > edges = { 0, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 10 };
+    std::vector< double > edges = { 0, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 1000 };
     Block1D* bt = new Block1D( "true_p_rel_cm;GeV/c", "p_{rel}^{c.m.};GeV/c",
       "p_{\\rm rel}^{\\rm c.m.};GeV/c", edges, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
     Block1D* br = new Block1D( "reco_p_rel_cm;GeV/c", "p_{rel}^{c.m.};GeV/c",
@@ -142,11 +145,11 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   // Block 11: p_rel_cm in pn slices (2D), 15 bins
   {
     std::map< double, std::vector< double > > slices = {
-      { 0, { 0, 0.25, 0.4, 10 } },
-      { 0.25, { 0, 0.2, 0.3, 10 } },
-      { 0.4, { 0, 0.2, 0.3, 0.45, 10 } },
-      { 0.55, { 0, 0.2, 0.3, 0.4, 0.5, 10 } },
-      { 10, {  } }
+      { 0, { 0, 0.25, 0.4, 1000 } },
+      { 0.25, { 0, 0.2, 0.3, 1000 } },
+      { 0.4, { 0, 0.2, 0.3, 0.45, 1000 } },
+      { 0.55, { 0, 0.2, 0.3, 0.4, 0.5, 1000 } },
+      { 1000, {  } }
     };
     Block2D* bt = new Block2D( "true_pn;GeV/c;true_p_rel_cm;GeV/c",
       "p_{n};GeV/c;p_{rel}^{c.m.};GeV/c", "p_{n};GeV/c;p_{\\rm rel}^{\\rm c.m.};GeV/c", slices, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
@@ -157,11 +160,11 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   // Block 12: cos_gamma_pp in pn slices (2D), 32 bins
   {
     std::map< double, std::vector< double > > slices = {
-      { 0, { -1, -0.9, -0.75, -0.55, -0.3, -0.05, 0.35, 1 } },
-      { 0.25, { -1, -0.95, -0.85, -0.7, -0.5, -0.3, -0.05, 0.3, 0.55, 0.8, 1 } },
-      { 0.45, { -1, -0.95, -0.75, -0.45, -0.1, 0.3, 0.6, 1 } },
-      { 0.65, { -1, -0.85, -0.6, -0.3, -0.1, 0.3, 0.5, 0.75, 1 } },
-      { 10, {  } }
+      { 0, { -1, -0.9, -0.75, -0.55, -0.3, -0.05, 0.35, 1.001 } },
+      { 0.25, { -1, -0.95, -0.85, -0.7, -0.5, -0.3, -0.05, 0.3, 0.55, 0.8, 1.001 } },
+      { 0.45, { -1, -0.95, -0.75, -0.45, -0.1, 0.3, 0.6, 1.001 } },
+      { 0.65, { -1, -0.85, -0.6, -0.3, -0.1, 0.3, 0.5, 0.75, 1.001 } },
+      { 1000, {  } }
     };
     Block2D* bt = new Block2D( "true_pn;GeV/c;true_cos_gamma_pp;",
       "p_{n};GeV/c;cos#gamma_{pp};", "p_{n};GeV/c;\\cos\\gamma_{pp};", slices, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
@@ -172,11 +175,11 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   // Block 13: cos_theta_pinit_sub in p_rel_cm slices (2D), 19 bins
   {
     std::map< double, std::vector< double > > slices = {
-      { 0, { -1, -0.8, -0.4, 0.15, 1 } },
-      { 0.2, { -1, -0.9, -0.6, -0.25, 0.3, 1 } },
-      { 0.3, { -1, -0.9, -0.7, -0.25, 1 } },
-      { 0.4, { -1, -0.95, -0.85, -0.65, -0.3, 0.15, 1 } },
-      { 10, {  } }
+      { 0, { -1, -0.8, -0.4, 0.15, 1.001 } },
+      { 0.2, { -1, -0.9, -0.6, -0.25, 0.3, 1.001 } },
+      { 0.3, { -1, -0.9, -0.7, -0.25, 1.001 } },
+      { 0.4, { -1, -0.95, -0.85, -0.65, -0.3, 0.15, 1.001 } },
+      { 1000, {  } }
     };
     Block2D* bt = new Block2D( "true_p_rel_cm;GeV/c;true_cos_theta_pinit_sub;",
       "p_{rel}^{c.m.};GeV/c;cos#theta(p_{init},p^{sub});", "p_{\\rm rel}^{\\rm c.m.};GeV/c;\\cos\\theta(p_{\\rm init}, p^{\\rm sub});", slices, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
@@ -187,10 +190,10 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   // Block 14: p_mu in cos_theta_mu slices (2D), 22 bins
   {
     std::map< double, std::vector< double > > slices = {
-      { -1, { 0.1, 0.2, 0.25, 0.3, 10 } },
-      { -0.4, { 0.1, 0.2, 0.25, 0.3, 0.35, 0.45, 0.6, 10 } },
-      { 0.55, { 0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.55, 0.65, 0.8, 1.05, 10 } },
-      { 1, {  } }
+      { -1, { 0.1, 0.2, 0.25, 0.3, 1000 } },
+      { -0.4, { 0.1, 0.2, 0.25, 0.3, 0.35, 0.45, 0.6, 1000 } },
+      { 0.55, { 0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.55, 0.65, 0.8, 1.05, 1000 } },
+      { 1.001, {  } }
     };
     Block2D* bt = new Block2D( "true_cos_theta_mu;;true_p_mu;GeV/c",
       "cos#theta_{#mu};;p_{#mu};GeV/c", "\\cos\\theta_{\\mu};;p_{\\mu};GeV/c", slices, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
@@ -201,11 +204,11 @@ void CC1mu2p0piHybridBinScheme::DefineBlocks() {
   // Block 15: p_rel_cm in cos_theta_lead_q slices (2D), 20 bins
   {
     std::map< double, std::vector< double > > slices = {
-      { -1, { 0, 0.4, 10 } },
-      { -0.6, { 0, 0.25, 0.35, 0.4, 0.45, 10 } },
-      { 0.2, { 0, 0.2, 0.3, 0.35, 0.4, 10 } },
-      { 0.65, { 0, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 10 } },
-      { 1, {  } }
+      { -1, { 0, 0.4, 1000 } },
+      { -0.6, { 0, 0.25, 0.35, 0.4, 0.45, 1000 } },
+      { 0.2, { 0, 0.2, 0.3, 0.35, 0.4, 1000 } },
+      { 0.65, { 0, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 1000 } },
+      { 1.001, {  } }
     };
     Block2D* bt = new Block2D( "true_cos_theta_lead_q;;true_p_rel_cm;GeV/c",
       "cos#theta_{p,q}^{lead};;p_{rel}^{c.m.};GeV/c", "\\cos\\theta_{p,q}^{\\rm lead};;p_{\\rm rel}^{\\rm c.m.};GeV/c", slices, "CC1mu2p0piHybrid_MC_Signal", kSignalTrueBin );
