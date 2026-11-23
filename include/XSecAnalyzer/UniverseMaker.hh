@@ -7,6 +7,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <sstream>
@@ -550,6 +551,12 @@ class UniverseMaker {
 
     // Set when at least one MC event was found in a true bin
     bool has_true_entries_ = false;
+
+    // Distinct patterns of ordinary reco bins filled by the events (sorted
+    // reco bin indices, one row of the MC combination matrix Omega each).
+    // Saved as Omega^T Omega for the global chi2 across blocks (see
+    // XSecAnalyzer/CombinationMatrix.hh).
+    std::set< std::vector< int > > reco_patterns_;
 
     // Root TDirectoryFile name to use when writing the universes to an output
     // ROOT file
